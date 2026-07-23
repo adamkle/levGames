@@ -1,0 +1,2611 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>המשחקים של לב | Arcade Hub</title>
+  <!-- Google Fonts for modern Hebrew typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.75);
+      --card-border: rgba(255, 255, 255, 0.1);
+      
+      --color-x: #38bdf8;
+      --color-x-glow: rgba(56, 189, 248, 0.5);
+      --color-o: #f43f5e;
+      --color-o-glow: rgba(244, 63, 94, 0.5);
+      --color-draw: #fbbf24;
+      --color-car: #10b981;
+      --color-bowling: #a855f7;
+      --color-bowling-glow: rgba(168, 85, 247, 0.5);
+      --color-trash: #f97316;
+      --color-trash-glow: rgba(249, 115, 22, 0.5);
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Rubik', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      touch-action: manipulation;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0.5rem 0.75rem 1.5rem 0.75rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background lights */
+    .ambient-light {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .light-1 {
+      top: 5%;
+      left: 15%;
+      width: 300px;
+      height: 300px;
+      background: rgba(56, 189, 248, 0.15);
+    }
+    .light-2 {
+      bottom: 10%;
+      right: 15%;
+      width: 350px;
+      height: 350px;
+      background: rgba(168, 85, 247, 0.15);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 0.2rem;
+    }
+
+    /* Screen Transitions */
+    .screen {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .screen.hidden {
+      display: none !important;
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    /* Header & Top Bar */
+    header {
+      text-align: center;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 0.2rem;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Row 1: Title alone at the top! */
+    h1 {
+      font-size: 2.6rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.4rem;
+      line-height: 1.15;
+      text-shadow: 0 0 30px rgba(129, 140, 248, 0.3);
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Row 2: Controls and subtitle directly underneath */
+    .header-row-2 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .icon-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      border-radius: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+    }
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.05);
+    }
+    .icon-btn.muted {
+      opacity: 0.5;
+    }
+
+    /* Hub Screen Cards - 2x2 Grid */
+    .hub-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .game-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.2rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.6rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .game-card:hover, .game-card:active {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 20px 40px rgba(99, 102, 241, 0.25);
+    }
+
+    .game-card-icon {
+      font-size: 3rem;
+      margin-bottom: 0.1rem;
+      transition: transform 0.3s ease;
+    }
+
+    .game-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .game-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    /* Cards & Forms */
+    .welcome-card {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 1.8rem 1.2rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      text-align: right;
+    }
+
+    .input-group label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Scoreboard XO */
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.6rem;
+      width: 100%;
+    }
+
+    .score-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 0.85rem 0.4rem;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-card.active-turn {
+      transform: translateY(-3px);
+    }
+
+    .score-card.is-x.active-turn {
+      border-color: var(--color-x);
+      box-shadow: 0 0 20px var(--color-x-glow);
+    }
+
+    .score-card.is-o.active-turn {
+      border-color: var(--color-o);
+      box-shadow: 0 0 20px var(--color-o-glow);
+    }
+
+    .player-name-input {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      width: 90%;
+      outline: none;
+      border-bottom: 1px dashed transparent;
+      transition: border 0.2s;
+    }
+
+    .player-name-input:focus, .player-name-input:hover {
+      color: var(--text-main);
+      border-bottom-color: var(--card-border);
+    }
+
+    .symbol-badge {
+      font-size: 1.2rem;
+      font-weight: 800;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .symbol-badge.badge-x { color: var(--color-x); text-shadow: 0 0 8px var(--color-x-glow); }
+    .symbol-badge.badge-o { color: var(--color-o); text-shadow: 0 0 8px var(--color-o-glow); }
+    .symbol-badge.badge-draw { color: var(--color-draw); }
+
+    .score-val {
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin-top: 0.25rem;
+    }
+
+    /* Turn Status Banner */
+    .status-banner {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 30px;
+      padding: 0.6rem 1.4rem;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .status-banner .turn-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .turn-indicator.turn-x {
+      background-color: var(--color-x);
+      box-shadow: 0 0 8px var(--color-x);
+    }
+
+    .turn-indicator.turn-o {
+      background-color: var(--color-o);
+      box-shadow: 0 0 8px var(--color-o);
+    }
+
+    /* Board XO */
+    .board-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    .board {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.4);
+      padding: 10px;
+      border-radius: 24px;
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .cell {
+      background: rgba(30, 41, 59, 0.8);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cell:hover:not(.occupied) {
+      background: rgba(51, 65, 85, 0.9);
+      transform: scale(1.03);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .cell.occupied { cursor: default; }
+
+    /* SVG Marks */
+    .cell svg {
+      width: 60%;
+      height: 60%;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: draw 0.4s ease forwards;
+    }
+
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    .cell.mark-x svg line { stroke: var(--color-x); filter: drop-shadow(0 0 6px var(--color-x-glow)); }
+    .cell.mark-o svg circle { stroke: var(--color-o); filter: drop-shadow(0 0 6px var(--color-o-glow)); }
+
+    /* Control Buttons */
+    .controls {
+      display: flex;
+      gap: 0.6rem;
+      width: 100%;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.9rem 1rem;
+      min-height: 48px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      touch-action: manipulation;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      color: white;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-secondary:active {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-main);
+    }
+
+    /* BOWLING DYNAMIC SCOREBOARD (1 TO 6 PLAYERS) */
+    .bowling-scoreboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .bowling-card {
+      flex: 1 1 calc(33.33% - 0.4rem);
+      min-width: 75px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 0.6rem 0.2rem;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .bowling-card.active-turn {
+      border-color: var(--color-bowling);
+      box-shadow: 0 0 16px var(--color-bowling-glow);
+      transform: translateY(-2px);
+    }
+
+    .bowling-pname {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bowling-score {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--color-bowling);
+      margin-top: 0.15rem;
+    }
+
+    .bowling-rolls-left {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.1rem;
+    }
+
+    .double-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #0f172a;
+      padding: 0.1rem 0.3rem;
+      border-radius: 6px;
+      margin-top: 0.2rem;
+      display: inline-block;
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+    }
+
+    .player-count-picker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 0.6rem 1rem;
+      border-radius: 18px;
+      border: 1px solid var(--card-border);
+    }
+
+    .count-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text-main);
+      font-size: 1.3rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .count-btn:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .hud-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .game-canvas-wrapper, .bowling-canvas-wrapper, .trash-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 2 / 3;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid var(--card-border);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      touch-action: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .game-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .touch-drag-hint {
+      font-size: 0.85rem;
+      color: #f97316;
+      font-weight: 700;
+      background: rgba(249, 115, 22, 0.15);
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.7; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1.02); }
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Mobile specific adjustments */
+    @media (max-width: 480px) {
+      body { padding: 0.4rem 0.5rem 1rem 0.5rem; }
+      h1 { font-size: 2.2rem; }
+      .container { gap: 1rem; }
+      .hub-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .game-card { padding: 1rem 0.5rem; }
+      .game-card-icon { font-size: 2.5rem; }
+      .game-card h3 { font-size: 1.05rem; }
+      .welcome-card { padding: 1.4rem 1rem; }
+      .score-card { padding: 0.6rem 0.2rem; }
+      .controls { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-light light-1"></div>
+  <div class="ambient-light light-2"></div>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="container">
+    <header>
+      <!-- ROW 1: MAIN TITLE ALONE -->
+      <h1 id="mainTitle">המשחקים של לב</h1>
+      
+      <!-- ROW 2: CONTROLS & SUBTITLE DIRECTLY UNDERNEATH -->
+      <div class="header-row-2">
+        <div class="top-controls">
+          <button class="icon-btn" id="bgmToggle" title="הפעל/הפסק מוזיקת רקע">🎵</button>
+          <button class="icon-btn" id="sfxToggle" title="הפעל/כבה אפקטי צליל">🔔</button>
+          <button class="icon-btn hidden" id="homeBtn" title="חזרה לתפריט הראשי">🏠</button>
+        </div>
+        <p class="subtitle" id="subTitleText">בחר משחק להתחלת החוויה</p>
+      </div>
+    </header>
+
+    <!-- SCREEN 0: Main Hub Screen -->
+    <div class="screen" id="hubScreen">
+      <div class="hub-grid">
+        <div class="game-card" id="cardSelectXO">
+          <div class="game-card-icon">❌⭕</div>
+          <h3>איקס עיגול</h3>
+          <p>משחק זוגי עם תוצאות ותורות מתחלפים</p>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem;">🎮 איקס עיגול</button>
+        </div>
+
+        <div class="game-card" id="cardSelectCar">
+          <div class="game-card-icon">🏎️</div>
+          <h3>מרוץ מכוניות</h3>
+          <p>הזזת המכונית עם האצבע מצד לצד!</p>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #10b981, #059669);">🏎️ מכוניות</button>
+        </div>
+
+        <div class="game-card" id="cardSelectBowling">
+          <div class="game-card-icon">🎳</div>
+          <h3>טורניר באולינג</h3>
+          <p>בחירת 1 עד 6 שחקנים + סטרייק מעניק 2X!</p>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #a855f7, #9333ea);">🎳 באולינג</button>
+        </div>
+
+        <div class="game-card" id="cardSelectTrash">
+          <div class="game-card-icon">🗑️🤢</div>
+          <h3>זרוק לפח!</h3>
+          <p>מכסה עולה ויורד! זרקו כשהפח פתוח!</p>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #f97316, #ea580c);">🗑️ זרוק לפח</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: XO Welcome Screen -->
+    <div class="screen hidden" id="xoWelcomeScreen">
+      <div class="welcome-card">
+        <div class="welcome-logo">
+          <span class="logo-x">✕</span>
+          <span style="color: var(--text-muted); font-size: 1.8rem; font-weight: 400;">VS</span>
+          <span class="logo-o">◯</span>
+        </div>
+
+        <div class="input-group">
+          <label for="welcomeP1"><span style="color: var(--color-x);">✕</span> שם שחקן ראשון:</label>
+          <input type="text" id="welcomeP1" class="form-input" value="שחקן 1" placeholder="הכנס שם...">
+        </div>
+
+        <div class="input-group">
+          <label for="welcomeP2"><span style="color: var(--color-o);">◯</span> שם שחקן שני:</label>
+          <input type="text" id="welcomeP2" class="form-input" value="שחקן 2" placeholder="הכנס שם...">
+        </div>
+
+        <button class="btn btn-primary" id="btnStartXO" style="padding: 1.1rem; font-size: 1.1rem;">
+          🚀 התחל משחק איקס עיגול
+        </button>
+        <button class="btn btn-secondary" id="btnBackFromXOWelcome">🏠 חזרה לתפריט</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: XO Game Screen -->
+    <div class="screen hidden" id="xoGameScreen">
+      <div class="scoreboard">
+        <div class="score-card" id="cardP1">
+          <span class="symbol-badge badge-x" id="symbolP1">✕</span><br>
+          <input type="text" class="player-name-input" id="nameP1" value="שחקן 1" title="לחץ לעריכת שם">
+          <div class="score-val" id="scoreP1">0</div>
+        </div>
+
+        <div class="score-card card-draw" id="cardDraw">
+          <span class="symbol-badge badge-draw">🤝</span><br>
+          <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">תיקו</span>
+          <div class="score-val" id="scoreDraw">0</div>
+        </div>
+
+        <div class="score-card" id="cardP2">
+          <span class="symbol-badge badge-o" id="symbolP2">◯</span><br>
+          <input type="text" class="player-name-input" id="nameP2" value="שחקן 2" title="לחץ לעריכת שם">
+          <div class="score-val" id="scoreP2">0</div>
+        </div>
+      </div>
+
+      <div class="status-banner" id="statusBanner">
+        <span class="turn-indicator turn-x" id="statusIndicator"></span>
+        <span id="statusText">התור של שחקן 1 (X)</span>
+      </div>
+
+      <div class="board-container">
+        <div class="board" id="board">
+          <div class="cell" data-index="0"></div>
+          <div class="cell" data-index="1"></div>
+          <div class="cell" data-index="2"></div>
+          <div class="cell" data-index="3"></div>
+          <div class="cell" data-index="4"></div>
+          <div class="cell" data-index="5"></div>
+          <div class="cell" data-index="6"></div>
+          <div class="cell" data-index="7"></div>
+          <div class="cell" data-index="8"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="btnResetGame">🔄 סיבוב חדש</button>
+        <button class="btn btn-secondary" id="btnResetScore">🗑️ איפוס תוצאות</button>
+        <button class="btn btn-secondary" id="btnBackToMenuFromXO">🏠 תפריט ראשי</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: Car Game Screen -->
+    <div class="screen hidden" id="carGameScreen">
+      <div class="hud-bar">
+        <div>ניקוד: <strong id="carScore" style="color: var(--color-car); font-size: 1.1rem;">0</strong></div>
+        <div>
+          <span class="level-badge" id="carLevelBadge">
+            שלב 1 <span class="coin-progress" id="coinProgress">(🪙 0/10)</span>
+          </span>
+        </div>
+        <div>שיא: <strong id="carHighScore" style="color: var(--color-draw); font-size: 1.1rem;">0</strong></div>
+      </div>
+
+      <div class="game-canvas-wrapper">
+        <canvas id="carCanvas" width="400" height="600"></canvas>
+        <div class="game-overlay" id="carOverlay">
+          <h2 id="carOverlayTitle" style="font-size: 2rem; color: #10b981;">🏎️ מרוץ מכוניות</h2>
+          <p id="carOverlayDesc" style="color: var(--text-muted);">
+            <strong>👉 החלק עם האצבע על המסך מצד לצד להזזת המכונית!</strong><br>
+            אסוף 10 מטבעות (🪙) כדי לעבור כל שלב!
+          </p>
+          <button class="btn btn-primary" id="btnStartCarGame" style="padding: 1rem 2rem; font-size: 1.1rem; background: linear-gradient(135deg, #10b981, #059669);">
+            🚀 התחל נהיגה
+          </button>
+        </div>
+      </div>
+
+      <div class="touch-drag-hint">
+        👇 גרור את האצבע על המסך מצד לצד להגוי
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-secondary" id="btnBackToMenuFromCar">🏠 תפריט ראשי</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: Bowling Welcome / Names Setup Screen -->
+    <div class="screen hidden" id="bowlingSetupScreen">
+      <div class="welcome-card">
+        <h2 style="font-size: 1.8rem; text-align: center; color: var(--color-bowling);">🎳 טורניר באולינג</h2>
+        
+        <!-- PLAYER COUNT SELECTOR (+ AND - BUTTONS) -->
+        <div class="input-group" style="align-items: center; text-align: center;">
+          <label style="font-size: 1rem; color: var(--text-main);">מספר שחקנים בטורניר:</label>
+          <div class="player-count-picker">
+            <button class="count-btn" id="btnDecPlayers" title="פחות שחקנים">➖</button>
+            <span id="bowlingPlayerCountText" style="font-size: 1.5rem; font-weight: 800; color: var(--color-bowling); min-width: 36px;">4</span>
+            <button class="count-btn" id="btnIncPlayers" title="יותר שחקנים">➕</button>
+          </div>
+        </div>
+
+        <!-- DYNAMIC PLAYER NAME INPUTS -->
+        <div id="bowlingPlayerInputs" style="display: flex; flex-direction: column; gap: 0.8rem; width: 100%;">
+          <!-- Rendered dynamically by JS -->
+        </div>
+
+        <button class="btn btn-primary" id="btnStartBowlingGame" style="padding: 1.1rem; font-size: 1.1rem; background: linear-gradient(135deg, #a855f7, #9333ea);">
+          🎳 התחל טורניר באולינג!
+        </button>
+        <button class="btn btn-secondary" id="btnBackFromBowlingSetup">🏠 חזרה לתפריט</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: Bowling Game Play Screen -->
+    <div class="screen hidden" id="bowlingGameScreen">
+      <!-- DYNAMIC SCOREBOARD CONTAINING 1 TO 6 CARDS -->
+      <div class="bowling-scoreboard" id="bowlingScoreboard">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+      <div class="status-banner" id="bowlingStatusBanner">
+        <span id="bowlingStatusText">התור של שחקן 1 (זריקה 1 מתוך 2 בתור)</span>
+      </div>
+
+      <div class="bowling-canvas-wrapper">
+        <canvas id="bowlingCanvas" width="400" height="600"></canvas>
+        <div class="game-overlay" id="bowlingOverlay">
+          <h2 id="bowlingOverlayTitle" style="font-size: 2rem; color: #a855f7;">🎳 טורניר באולינג</h2>
+          <p id="bowlingOverlayDesc" style="color: var(--text-muted);">
+            כל שחקן מבצע 2 זריקות בתורו.<br>
+            <strong>🔥 סטרייק מעניק ניקוד כפול (2X) בתור הבא שלך!</strong>
+          </p>
+          <button class="btn btn-primary" id="btnRollBowlingAction" style="padding: 1rem 2rem; font-size: 1.1rem; background: linear-gradient(135deg, #a855f7, #9333ea);">
+            🎳 זרוק כדור!
+          </button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="btnBowlingAction">🎯 כוון / זרוק!</button>
+        <button class="btn btn-secondary" id="btnBackToMenuFromBowling">🏠 תפריט ראשי</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 6: TRASH / FOOD THROW GAME SCREEN -->
+    <div class="screen hidden" id="trashGameScreen">
+      <div class="hud-bar">
+        <div>ניקוד: <strong id="trashScore" style="color: var(--color-trash); font-size: 1.1rem;">0</strong></div>
+        <div>זריקות: <strong id="trashThrowsLeft" style="color: var(--color-draw); font-size: 1.1rem;">10/10</strong></div>
+        <div>שיא: <strong id="trashHighScore" style="color: var(--color-car); font-size: 1.1rem;">0</strong></div>
+      </div>
+
+      <div class="trash-canvas-wrapper">
+        <canvas id="trashCanvas" width="400" height="600"></canvas>
+        <div class="game-overlay" id="trashOverlay">
+          <h2 id="trashOverlayTitle" style="font-size: 2rem; color: #f97316;">🗑️ זרוק אוכל לפח!</h2>
+          <p id="trashOverlayDesc" style="color: var(--text-muted);">
+            <strong>👉 המכסה עולה ויורד! זרקו את האוכל כשהפח פתוח! 🗑️</strong><br>
+            משוך אחורה ושחרר, שים לב לכיוון הרוח 🌬️!
+          </p>
+          <button class="btn btn-primary" id="btnStartTrashGame" style="padding: 1rem 2rem; font-size: 1.1rem; background: linear-gradient(135deg, #f97316, #ea580c);">
+            🚀 התחל לזרוק!
+          </button>
+        </div>
+      </div>
+
+      <div class="touch-drag-hint">
+        🎯 משוך ושחרר או החלק למעלה בזמן שהמכסה פתוח!
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-secondary" id="btnBackToMenuFromTrash">🏠 תפריט ראשי</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- Audio Engine (Web Audio API) ---
+    class AudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.sfxEnabled = true;
+        this.bgmEnabled = true;
+        this.bgmPlaying = false;
+        this.bgmTimer = null;
+        this.bgmStep = 0;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, type, duration, startVol = 0.15, endVol = 0.001) {
+        if (!this.sfxEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          
+          gain.gain.setValueAtTime(startVol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(endVol, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      playX() { this.playTone(523.25, 'sine', 0.15, 0.15); }
+      playO() { this.playTone(659.25, 'sine', 0.15, 0.15); }
+      playCoin() { this.playTone(987.77, 'triangle', 0.12, 0.2); }
+      playBasketScore() { this.playTone(783.99, 'sine', 0.25, 0.3); }
+
+      playPinCrash() {
+        if (!this.sfxEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        this.playTone(300, 'triangle', 0.25, 0.3);
+        setTimeout(() => this.playTone(500, 'sawtooth', 0.2, 0.2), 50);
+      }
+
+      playWallBounce() {
+        this.playTone(380, 'sine', 0.08, 0.2);
+      }
+
+      playLevelUp() {
+        if (!this.sfxEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            this.playTone(freq, 'triangle', 0.2, 0.2);
+          }, idx * 90);
+        });
+      }
+
+      playCrash() {
+        if (!this.sfxEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        this.playTone(120, 'sawtooth', 0.4, 0.3);
+      }
+
+      playVictoryFanfare() {
+        if (!this.sfxEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [
+          { f: 261.63, t: 0, d: 0.12, type: 'triangle' },
+          { f: 329.63, t: 0.12, d: 0.12, type: 'triangle' },
+          { f: 392.00, t: 0.24, d: 0.12, type: 'triangle' },
+          { f: 523.25, t: 0.36, d: 0.35, type: 'triangle' },
+          { f: 392.00, t: 0.60, d: 0.12, type: 'triangle' },
+          { f: 523.25, t: 0.75, d: 0.90, type: 'sine' },
+          { f: 659.25, t: 0.75, d: 0.90, type: 'sine' },
+          { f: 783.99, t: 0.75, d: 0.90, type: 'sine' }
+        ];
+
+        notes.forEach(note => {
+          setTimeout(() => {
+            this.playTone(note.f, note.type, note.d, 0.2, 0.001);
+          }, note.t * 1000);
+        });
+      }
+
+      playDraw() {
+        if (!this.sfxEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [400, 350, 300];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            this.playTone(freq, 'sawtooth', 0.2, 0.1);
+          }, idx * 120);
+        });
+      }
+
+      playClick() { this.playTone(800, 'sine', 0.05, 0.05); }
+
+      startBGM() {
+        this.bgmEnabled = true;
+        if (this.bgmPlaying) return;
+        this.bgmPlaying = true;
+        this.bgmStep = 0;
+        this.scheduleNextBgmNote();
+      }
+
+      stopBGM() {
+        this.bgmEnabled = false;
+        this.bgmPlaying = false;
+        if (this.bgmTimer) {
+          clearTimeout(this.bgmTimer);
+          this.bgmTimer = null;
+        }
+      }
+
+      scheduleNextBgmNote() {
+        if (!this.bgmEnabled || !this.bgmPlaying) return;
+        this.init();
+
+        const chordProgressions = [
+          [261.63, 329.63, 392.00, 523.25],
+          [220.00, 261.63, 329.63, 440.00],
+          [174.61, 220.00, 261.63, 349.23],
+          [196.00, 246.94, 293.66, 392.00]
+        ];
+
+        const chordIdx = Math.floor(this.bgmStep / 8) % chordProgressions.length;
+        const noteIdx = this.bgmStep % 4;
+        const freq = chordProgressions[chordIdx][noteIdx];
+
+        if (this.ctx && this.bgmEnabled) {
+          try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.025, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0005, this.ctx.currentTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.35);
+          } catch (e) {}
+        }
+
+        this.bgmStep++;
+        this.bgmTimer = setTimeout(() => {
+          this.scheduleNextBgmNote();
+        }, 220);
+      }
+    }
+
+    const audio = new AudioEngine();
+
+    document.addEventListener('touchstart', () => {
+      audio.init();
+      if (audio.bgmEnabled && !audio.bgmPlaying) {
+        audio.startBGM();
+      }
+    }, { once: true });
+
+    document.addEventListener('click', () => {
+      audio.init();
+      if (audio.bgmEnabled && !audio.bgmPlaying) {
+        audio.startBGM();
+      }
+    }, { once: true });
+
+    // --- Confetti Engine ---
+    class Confetti {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.particles = [];
+        this.animId = null;
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+      }
+
+      resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      trigger() {
+        this.resize();
+        this.particles = [];
+        const colors = ['#38bdf8', '#f43f5e', '#fbbf24', '#818cf8', '#10b981', '#a855f7'];
+        for (let i = 0; i < 110; i++) {
+          this.particles.push({
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+            vx: (Math.random() - 0.5) * 16,
+            vy: (Math.random() - 0.7) * 18,
+            size: Math.random() * 8 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rotation: Math.random() * Math.PI * 2,
+            vRot: (Math.random() - 0.5) * 0.2,
+            life: 1,
+            decay: Math.random() * 0.015 + 0.008
+          });
+        }
+        if (!this.animId) this.animate();
+      }
+
+      animate() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        let alive = false;
+        this.particles.forEach(p => {
+          if (p.life > 0) {
+            alive = true;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.35;
+            p.rotation += p.vRot;
+            p.life -= p.decay;
+
+            this.ctx.save();
+            this.ctx.translate(p.x, p.y);
+            this.ctx.rotate(p.rotation);
+            this.ctx.globalAlpha = Math.max(0, p.life);
+            this.ctx.fillStyle = p.color;
+            this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            this.ctx.restore();
+          }
+        });
+        if (alive) this.animId = requestAnimationFrame(() => this.animate());
+        else { this.animId = null; this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); }
+      }
+    }
+
+    const confetti = new Confetti('confetti-canvas');
+
+    // --- TRASH / FOOD THROWING GAME ENGINE ---
+    const FOOD_TYPES = [
+      { emoji: '🤢', name: 'מאכל רקוב' },
+      { emoji: '🐟', name: 'דג רקוב' },
+      { emoji: '🦴', name: 'עצם אכולה' },
+      { emoji: '🍌', name: 'קליפת בננה רקובה' },
+      { emoji: '🧀', name: 'גבינה מעופשת' },
+      { emoji: '🥑', name: 'אבוקדו מקולקל' },
+      { emoji: '🍎', name: 'ליבת תפוח' },
+      { emoji: '🍔', name: 'המבורגר ישן' },
+      { emoji: '🍕', name: 'פיצה רקובה' }
+    ];
+
+    class TrashGame {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+
+        this.bin = { x: 160, y: 110, w: 80, h: 90 };
+        this.food = { x: 200, y: 520, vx: 0, vy: 0, r: 22, isFlying: false, type: FOOD_TYPES[0] };
+        this.dragStart = null;
+        this.currentDrag = null;
+        this.isDragging = false;
+
+        this.lidTimer = 0;
+        this.lidYOffset = 0;
+        this.isLidOpen = true;
+
+        this.score = 0;
+        this.throwsLeft = 10;
+        this.highScore = parseInt(localStorage.getItem('trash_highscore') || '0');
+        this.wind = 0;
+        this.active = false;
+        this.animId = null;
+        this.bannerText = '';
+        this.bannerTimer = 0;
+
+        document.getElementById('trashHighScore').textContent = this.highScore;
+        this.setupTouchDrag();
+      }
+
+      setupTouchDrag() {
+        const getPos = (clientX, clientY) => {
+          const rect = this.canvas.getBoundingClientRect();
+          return {
+            x: (clientX - rect.left) * (this.width / rect.width),
+            y: (clientY - rect.top) * (this.height / rect.height)
+          };
+        };
+
+        const onStart = (clientX, clientY) => {
+          if (!this.active || this.food.isFlying) return;
+          const pos = getPos(clientX, clientY);
+          const dist = Math.hypot(pos.x - this.food.x, pos.y - this.food.y);
+          if (dist < 60) {
+            this.isDragging = true;
+            this.dragStart = pos;
+            this.currentDrag = pos;
+          }
+        };
+
+        const onMove = (clientX, clientY) => {
+          if (!this.isDragging || !this.active) return;
+          this.currentDrag = getPos(clientX, clientY);
+        };
+
+        const onEnd = () => {
+          if (!this.isDragging || !this.active) return;
+          this.isDragging = false;
+
+          const dx = this.dragStart.x - this.currentDrag.x;
+          const dy = this.dragStart.y - this.currentDrag.y;
+
+          if (dy > 15 || Math.hypot(dx, dy) > 20) {
+            this.food.isFlying = true;
+            this.food.vx = dx * 0.12;
+            this.food.vy = -Math.max(8, Math.min(18, dy * 0.14));
+            audio.playClick();
+          }
+          this.dragStart = null;
+          this.currentDrag = null;
+        };
+
+        this.canvas.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          if (e.touches.length > 0) onStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          if (e.touches.length > 0) onMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          onEnd();
+        }, { passive: false });
+
+        this.canvas.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+        this.canvas.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', () => onEnd());
+      }
+
+      start() {
+        this.score = 0;
+        this.throwsLeft = 10;
+        this.active = true;
+        this.lidTimer = 0;
+
+        this.resetFood();
+        this.randomizeWind();
+        document.getElementById('trashScore').textContent = '0';
+        document.getElementById('trashThrowsLeft').textContent = '10/10';
+        document.getElementById('trashOverlay').style.display = 'none';
+
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.loop();
+      }
+
+      randomizeWind() {
+        this.wind = (Math.random() - 0.5) * 1.6;
+      }
+
+      resetFood() {
+        const randomFood = FOOD_TYPES[Math.floor(Math.random() * FOOD_TYPES.length)];
+        this.food = {
+          x: 200,
+          y: 520,
+          vx: 0,
+          vy: 0,
+          r: 22,
+          isFlying: false,
+          type: randomFood
+        };
+      }
+
+      evaluateThrow(isBasket) {
+        this.throwsLeft--;
+        document.getElementById('trashThrowsLeft').textContent = `${this.throwsLeft}/10`;
+
+        if (isBasket) {
+          this.score += 100;
+          document.getElementById('trashScore').textContent = this.score;
+          this.bannerText = `🎯 ${this.food.type.name} לפח! (+100)`;
+          this.bannerTimer = 60;
+          audio.playBasketScore();
+          audio.playCoin();
+          confetti.trigger();
+        } else {
+          this.bannerText = this.isLidOpen ? '❌ פספסת!' : '🛡️ המכסה היה סגור!';
+          this.bannerTimer = 50;
+          audio.playCrash();
+        }
+
+        if (this.throwsLeft <= 0) {
+          setTimeout(() => this.stop(), 800);
+        } else {
+          setTimeout(() => {
+            this.resetFood();
+            this.randomizeWind();
+          }, 600);
+        }
+      }
+
+      stop() {
+        this.active = false;
+        if (this.animId) cancelAnimationFrame(this.animId);
+
+        if (this.score > this.highScore) {
+          this.highScore = this.score;
+          localStorage.setItem('trash_highscore', this.highScore);
+          document.getElementById('trashHighScore').textContent = this.highScore;
+          confetti.trigger();
+        }
+
+        const overlay = document.getElementById('trashOverlay');
+        const title = document.getElementById('trashOverlayTitle');
+        const desc = document.getElementById('trashOverlayDesc');
+
+        overlay.style.display = 'flex';
+        title.textContent = '🏆 סיימת 10 זריקות!';
+        desc.innerHTML = `ניקוד סופי: <strong>${this.score}</strong> נקודות!<br>השיא שלך: ${this.highScore}`;
+      }
+
+      update() {
+        if (!this.active) return;
+
+        this.lidTimer += 0.038;
+        this.lidYOffset = Math.sin(this.lidTimer) * 18 - 18;
+        this.isLidOpen = this.lidYOffset < -14;
+
+        if (this.food.isFlying) {
+          this.food.x += this.food.vx + this.wind;
+          this.food.y += this.food.vy;
+          this.food.vy += 0.42;
+
+          const binRimY = this.bin.y;
+          const binRimLeft = this.bin.x - 5;
+          const binRimRight = this.bin.x + this.bin.w + 5;
+
+          if (
+            this.food.y >= binRimY && this.food.y <= binRimY + 30 &&
+            this.food.x >= binRimLeft && this.food.x <= binRimRight
+          ) {
+            this.food.isFlying = false;
+            this.evaluateThrow(this.isLidOpen);
+            return;
+          }
+
+          if (this.food.y > this.height + 40 || this.food.x < -40 || this.food.x > this.width + 40) {
+            this.food.isFlying = false;
+            this.evaluateThrow(false);
+            return;
+          }
+        }
+      }
+
+      draw() {
+        this.ctx.fillStyle = '#0f172a';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        this.ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        this.ctx.fillRect(15, 15, this.width - 30, 36);
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.font = '600 14px Rubik, sans-serif';
+        this.ctx.textAlign = 'center';
+        const windDirTxt = this.wind > 0.2 ? `רוח ימינה 🌬️ ➔` : (this.wind < -0.2 ? `⬅ 🌬️ רוח שמאלה` : `רוח שקטה 🍃`);
+        this.ctx.fillText(`כיוון הרוח: ${windDirTxt}`, this.width / 2, 38);
+
+        this.ctx.save();
+        this.ctx.fillStyle = '#475569';
+        this.ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        this.ctx.shadowBlur = 12;
+
+        this.ctx.beginPath();
+        this.ctx.roundRect(this.bin.x, this.bin.y + 12, this.bin.w, this.bin.h - 12, 10);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = '#f97316';
+        this.ctx.font = '22px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('🗑️', this.bin.x + this.bin.w / 2, this.bin.y + 60);
+
+        this.ctx.fillStyle = '#090d16';
+        this.ctx.beginPath();
+        this.ctx.ellipse(this.bin.x + this.bin.w / 2, this.bin.y + 10, this.bin.w / 2 - 4, 10, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        const lidY = this.bin.y + 10 + this.lidYOffset;
+
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.beginPath();
+        this.ctx.roundRect(this.bin.x + this.bin.w / 2 - 10, lidY - 8, 20, 8, 4);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = this.isLidOpen ? '#10b981' : '#f43f5e';
+        this.ctx.shadowColor = this.isLidOpen ? 'rgba(16, 185, 129, 0.5)' : 'rgba(244, 63, 94, 0.5)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.beginPath();
+        this.ctx.ellipse(this.bin.x + this.bin.w / 2, lidY, this.bin.w / 2 + 8, 12, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 11px Rubik, sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(this.isLidOpen ? 'פתוח 🟢' : 'סגור 🔴', this.bin.x + this.bin.w / 2, lidY + 4);
+
+        this.ctx.restore();
+
+        if (this.isDragging && this.dragStart && this.currentDrag) {
+          this.ctx.save();
+          this.ctx.strokeStyle = '#f97316';
+          this.ctx.lineWidth = 3;
+          this.ctx.setLineDash([6, 6]);
+          this.ctx.beginPath();
+          this.ctx.moveTo(this.food.x, this.food.y);
+
+          const aimX = this.food.x + (this.dragStart.x - this.currentDrag.x) * 2;
+          const aimY = this.food.y + (this.dragStart.y - this.currentDrag.y) * 2;
+          this.ctx.lineTo(aimX, aimY);
+          this.ctx.stroke();
+          this.ctx.restore();
+        }
+
+        this.ctx.save();
+        this.ctx.font = '36px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.shadowColor = 'rgba(249, 115, 22, 0.4)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.fillText(this.food.type.emoji, this.food.x, this.food.y);
+
+        this.ctx.font = '700 12px Rubik, sans-serif';
+        this.ctx.fillStyle = '#f97316';
+        this.ctx.fillText(this.food.type.name, this.food.x, this.food.y + 26);
+
+        this.ctx.restore();
+
+        if (this.bannerTimer > 0) {
+          this.bannerTimer--;
+          this.ctx.save();
+          this.ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+          this.ctx.fillRect(0, this.height / 2 - 30, this.width, 60);
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 18px Rubik, sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(this.bannerText, this.width / 2, this.height / 2);
+          this.ctx.restore();
+        }
+      }
+
+      loop() {
+        if (!this.active) return;
+        this.update();
+        this.draw();
+        this.animId = requestAnimationFrame(() => this.loop());
+      }
+    }
+
+    const trashGame = new TrashGame('trashCanvas');
+
+    // --- BOWLING GAME LOGIC WITH DYNAMIC 1 TO 6 PLAYERS & STRIKE 2X ---
+    class BowlingGame {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+
+        this.players = [];
+        this.activePlayerIdx = 0;
+        this.maxRoundsPerPlayer = 5;
+        this.rollInCurrentTurn = 1;
+        this.turnPinsKnocked = 0;
+
+        this.ball = { x: 200, y: 520, r: 18, vx: 0, vy: 0, isRolling: false };
+        this.aimAngle = 0;
+        this.aimDir = 1;
+        this.aimState = 'aiming';
+        this.pins = [];
+        this.active = false;
+        this.animId = null;
+        this.bannerText = '';
+        this.bannerSubText = '';
+        this.bannerTimer = 0;
+        this.isStrikeBanner = false;
+
+        this.setupPins();
+        this.setupTouchControls();
+      }
+
+      setupTouchControls() {
+        this.canvas.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          if (this.active) this.action();
+        }, { passive: false });
+      }
+
+      setupPins() {
+        this.pins = [];
+        const startY = 120;
+        const rowGap = 24;
+        const colGap = 26;
+
+        const pinRows = [
+          [{ x: 200, y: startY }],
+          [{ x: 200 - colGap / 2, y: startY - rowGap }, { x: 200 + colGap / 2, y: startY - rowGap }],
+          [{ x: 200 - colGap, y: startY - rowGap * 2 }, { x: 200, y: startY - rowGap * 2 }, { x: 200 + colGap, y: startY - rowGap * 2 }],
+          [{ x: 200 - colGap * 1.5, y: startY - rowGap * 3 }, { x: 200 - colGap / 2, y: startY - rowGap * 3 }, { x: 200 + colGap / 2, y: startY - rowGap * 3 }, { x: 200 + colGap * 1.5, y: startY - rowGap * 3 }]
+        ];
+
+        pinRows.forEach(row => {
+          row.forEach(p => {
+            this.pins.push({
+              x: p.x,
+              y: p.y,
+              r: 10,
+              isHit: false,
+              vx: 0,
+              vy: 0
+            });
+          });
+        });
+      }
+
+      startMatch(playerNames) {
+        this.players = playerNames.map((n, i) => ({
+          name: (n && n.trim()) ? n.trim() : `שחקן ${i + 1}`,
+          score: 0,
+          completedRounds: 0,
+          hasDoublePoints: false,
+          nextTurnDoublePoints: false
+        }));
+
+        this.activePlayerIdx = 0;
+        this.rollInCurrentTurn = 1;
+        this.turnPinsKnocked = 0;
+        this.active = true;
+
+        this.renderScoreboardCardsHTML();
+        this.resetBall();
+        this.setupPins();
+        this.updateScoreboardUI();
+        document.getElementById('bowlingOverlay').style.display = 'none';
+
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.loop();
+      }
+
+      renderScoreboardCardsHTML() {
+        const board = document.getElementById('bowlingScoreboard');
+        board.innerHTML = '';
+        this.players.forEach((p, i) => {
+          const card = document.createElement('div');
+          card.className = 'bowling-card';
+          card.id = `bCardP${i + 1}`;
+          card.innerHTML = `
+            <div class="bowling-pname" id="bNameP${i + 1}">${p.name}</div>
+            <div class="bowling-score" id="bScoreP${i + 1}">0</div>
+            <div class="bowling-rolls-left" id="bRollsP${i + 1}">סיבוב 0/5</div>
+            <div class="double-badge hidden" id="bDoubleP${i + 1}">🔥 2X!</div>
+          `;
+          board.appendChild(card);
+        });
+      }
+
+      resetBall() {
+        this.ball.x = 200;
+        this.ball.y = 520;
+        this.ball.vx = 0;
+        this.ball.vy = 0;
+        this.ball.isRolling = false;
+        this.aimState = 'aiming';
+        this.aimAngle = 0;
+      }
+
+      updateScoreboardUI() {
+        this.players.forEach((p, i) => {
+          document.getElementById(`bNameP${i + 1}`).textContent = p.name;
+          document.getElementById(`bScoreP${i + 1}`).textContent = p.score;
+          document.getElementById(`bRollsP${i + 1}`).textContent = `סיבוב ${p.completedRounds}/${this.maxRoundsPerPlayer}`;
+          
+          const doubleBadge = document.getElementById(`bDoubleP${i + 1}`);
+          if (p.hasDoublePoints) doubleBadge.classList.remove('hidden');
+          else doubleBadge.classList.add('hidden');
+
+          const card = document.getElementById(`bCardP${i + 1}`);
+          if (i === this.activePlayerIdx && this.active) {
+            card.classList.add('active-turn');
+          } else {
+            card.classList.remove('active-turn');
+          }
+        });
+
+        const activeP = this.players[this.activePlayerIdx];
+        const doubleTxt = activeP.hasDoublePoints ? ' (🔥 בונוס 2X מסטרייק!)' : '';
+        document.getElementById('bowlingStatusText').textContent = `התור של ${activeP.name}${doubleTxt} (זריקה ${this.rollInCurrentTurn}/2 בתור - סיבוב ${activeP.completedRounds + 1}/${this.maxRoundsPerPlayer})`;
+      }
+
+      action() {
+        if (!this.active) return;
+
+        if (this.aimState === 'aiming') {
+          audio.playClick();
+          this.aimState = 'rolling';
+          this.ball.isRolling = true;
+          const speed = 6.2;
+          this.ball.vx = Math.sin(this.aimAngle) * speed;
+          this.ball.vy = -Math.cos(this.aimAngle) * speed;
+        }
+      }
+
+      evaluateRoll() {
+        let totalKnockedNow = 0;
+        this.pins.forEach(pin => {
+          if (pin.isHit) totalKnockedNow++;
+        });
+
+        const newKnocked = totalKnockedNow - this.turnPinsKnocked;
+        this.turnPinsKnocked = totalKnockedNow;
+        const activeP = this.players[this.activePlayerIdx];
+
+        const multiplier = activeP.hasDoublePoints ? 2 : 1;
+        const earnedPoints = newKnocked * multiplier;
+        activeP.score += earnedPoints;
+
+        if (totalKnockedNow === 10) {
+          activeP.nextTurnDoublePoints = true;
+          this.bannerText = '🎳 סטרייק! STRIKE! 🔥';
+          this.bannerSubText = `${activeP.name} הפיל את כל הפינים! (מכפיל 2X יופעל בתור הבא!)`;
+          this.bannerTimer = 120;
+          this.isStrikeBanner = true;
+
+          audio.playVictoryFanfare();
+          confetti.trigger();
+
+          if (this.rollInCurrentTurn === 1) {
+            this.rollInCurrentTurn = 2;
+            this.turnPinsKnocked = 0;
+            this.setupPins();
+            this.resetBall();
+            this.updateScoreboardUI();
+          } else {
+            this.endTurn();
+          }
+          return;
+        }
+
+        this.isStrikeBanner = false;
+        const bonusMsg = multiplier === 2 ? ' 🔥 (ניקוד כפול 2X!)' : '';
+
+        if (this.rollInCurrentTurn === 1) {
+          this.bannerText = `פגעת ב-${newKnocked} פינים! (+${earnedPoints} נק׳)${bonusMsg}`;
+          this.bannerSubText = `זריקה שנייה בתורך`;
+          this.bannerTimer = 75;
+
+          this.rollInCurrentTurn = 2;
+          this.resetBall();
+          this.updateScoreboardUI();
+        } else {
+          this.bannerText = `סיימת תור עם עוד ${newKnocked} פינים! (+${earnedPoints} נק׳)${bonusMsg}`;
+          this.bannerSubText = '';
+          this.bannerTimer = 75;
+
+          this.endTurn();
+        }
+      }
+
+      endTurn() {
+        const activeP = this.players[this.activePlayerIdx];
+        activeP.completedRounds++;
+
+        if (activeP.nextTurnDoublePoints) {
+          activeP.hasDoublePoints = true;
+          activeP.nextTurnDoublePoints = false;
+        } else {
+          activeP.hasDoublePoints = false;
+        }
+
+        const allDone = this.players.every(p => p.completedRounds >= this.maxRoundsPerPlayer);
+
+        if (allDone) {
+          this.finishMatch();
+        } else {
+          do {
+            this.activePlayerIdx = (this.activePlayerIdx + 1) % this.players.length;
+          } while (this.players[this.activePlayerIdx].completedRounds >= this.maxRoundsPerPlayer);
+
+          this.rollInCurrentTurn = 1;
+          this.turnPinsKnocked = 0;
+          this.setupPins();
+          this.resetBall();
+          this.updateScoreboardUI();
+        }
+      }
+
+      finishMatch() {
+        this.active = false;
+        if (this.animId) cancelAnimationFrame(this.animId);
+
+        this.updateScoreboardUI();
+
+        let highest = -1;
+        let winner = this.players[0];
+        this.players.forEach(p => {
+          if (p.score > highest) {
+            highest = p.score;
+            winner = p;
+          }
+        });
+
+        audio.playVictoryFanfare();
+        confetti.trigger();
+
+        const overlay = document.getElementById('bowlingOverlay');
+        const title = document.getElementById('bowlingOverlayTitle');
+        const desc = document.getElementById('bowlingOverlayDesc');
+
+        overlay.style.display = 'flex';
+        title.textContent = `🏆 ${winner.name} מנצח בטורניר!`;
+        desc.innerHTML = `סך הנקודות מ-5 סיבובים: <strong>${winner.score}</strong> נקודות!<br>כל הכבוד לאלוף הטורניר!`;
+      }
+
+      update() {
+        if (!this.active) return;
+
+        if (this.aimState === 'aiming') {
+          this.aimAngle += this.aimDir * 0.018;
+          if (this.aimAngle > 0.45) { this.aimAngle = 0.45; this.aimDir = -1; }
+          if (this.aimAngle < -0.45) { this.aimAngle = -0.45; this.aimDir = 1; }
+        }
+
+        if (this.ball.isRolling) {
+          this.ball.x += this.ball.vx;
+          this.ball.y += this.ball.vy;
+
+          const laneLeftWall = 55 + this.ball.r;
+          const laneRightWall = this.width - 55 - this.ball.r;
+
+          if (this.ball.x <= laneLeftWall) {
+            this.ball.x = laneLeftWall;
+            this.ball.vx = Math.abs(this.ball.vx) * 0.85;
+            if (this.ball.vx < 1.2) this.ball.vx = 1.8;
+            audio.playWallBounce();
+          } else if (this.ball.x >= laneRightWall) {
+            this.ball.x = laneRightWall;
+            this.ball.vx = -Math.abs(this.ball.vx) * 0.85;
+            if (this.ball.vx > -1.2) this.ball.vx = -1.8;
+            audio.playWallBounce();
+          }
+
+          let hitAnyPin = false;
+          this.pins.forEach(pin => {
+            if (!pin.isHit) {
+              const dist = Math.hypot(this.ball.x - pin.x, this.ball.y - pin.y);
+              if (dist < this.ball.r + pin.r) {
+                pin.isHit = true;
+                hitAnyPin = true;
+                pin.vx = (pin.x - this.ball.x) * 0.25;
+                pin.vy = (pin.y - this.ball.y) * 0.25 - 1.5;
+              }
+            } else {
+              pin.x += pin.vx;
+              pin.y += pin.vy;
+              pin.vx *= 0.9;
+              pin.vy *= 0.9;
+            }
+          });
+
+          if (hitAnyPin) {
+            audio.playPinCrash();
+          }
+
+          if (this.ball.y < 40) {
+            this.ball.isRolling = false;
+            setTimeout(() => this.evaluateRoll(), 400);
+          }
+        }
+      }
+
+      draw() {
+        this.ctx.fillStyle = '#0f172a';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        const laneLeft = 55;
+        const laneRight = this.width - 55;
+
+        this.ctx.fillStyle = '#1e1b4b';
+        this.ctx.fillRect(laneLeft, 0, laneRight - laneLeft, this.height);
+
+        this.ctx.strokeStyle = '#a855f7';
+        this.ctx.lineWidth = 6;
+        this.ctx.shadowColor = '#a855f7';
+        this.ctx.shadowBlur = 10;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(laneLeft, 0);
+        this.ctx.lineTo(laneLeft, this.height);
+        this.ctx.stroke();
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(laneRight, 0);
+        this.ctx.lineTo(laneRight, this.height);
+        this.ctx.stroke();
+        this.ctx.shadowBlur = 0;
+
+        this.ctx.fillStyle = '#090d16';
+        this.ctx.fillRect(10, 0, laneLeft - 10, this.height);
+        this.ctx.fillRect(laneRight, 0, 10, this.height);
+
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        this.ctx.lineWidth = 2;
+        [100, 150, 200, 250, 300].forEach(x => {
+          this.ctx.beginPath(); this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.height); this.ctx.stroke();
+        });
+
+        this.ctx.strokeStyle = '#f43f5e';
+        this.ctx.lineWidth = 4;
+        this.ctx.beginPath(); this.ctx.moveTo(laneLeft, 480); this.ctx.lineTo(laneRight, 480); this.ctx.stroke();
+
+        this.pins.forEach(pin => {
+          this.ctx.save();
+          this.ctx.translate(pin.x, pin.y);
+          if (pin.isHit) {
+            this.ctx.globalAlpha = 0.35;
+            this.ctx.rotate(0.6);
+          }
+
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.shadowColor = 'rgba(255,255,255,0.4)';
+          this.ctx.shadowBlur = 6;
+          this.ctx.beginPath();
+          this.ctx.arc(0, 0, pin.r, 0, Math.PI * 2);
+          this.ctx.fill();
+
+          this.ctx.fillStyle = '#f43f5e';
+          this.ctx.fillRect(-pin.r + 2, -3, pin.r * 2 - 4, 5);
+
+          this.ctx.restore();
+        });
+
+        if (this.aimState === 'aiming' && !this.ball.isRolling) {
+          this.ctx.save();
+          this.ctx.strokeStyle = '#a855f7';
+          this.ctx.lineWidth = 3;
+          this.ctx.setLineDash([8, 8]);
+          this.ctx.shadowColor = '#a855f7';
+          this.ctx.shadowBlur = 10;
+          this.ctx.beginPath();
+          this.ctx.moveTo(this.ball.x, this.ball.y);
+          this.ctx.lineTo(
+            this.ball.x + Math.sin(this.aimAngle) * 320,
+            this.ball.y - Math.cos(this.aimAngle) * 320
+          );
+          this.ctx.stroke();
+          this.ctx.restore();
+        }
+
+        this.ctx.save();
+        this.ctx.fillStyle = '#a855f7';
+        this.ctx.shadowColor = '#a855f7';
+        this.ctx.shadowBlur = 12;
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x, this.ball.y, this.ball.r, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = '#0f172a';
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x - 4, this.ball.y - 4, 3, 0, Math.PI * 2);
+        this.ctx.arc(this.ball.x + 4, this.ball.y - 4, 3, 0, Math.PI * 2);
+        this.ctx.arc(this.ball.x, this.ball.y + 4, 3.5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.restore();
+
+        if (this.bannerTimer > 0) {
+          this.bannerTimer--;
+          this.ctx.save();
+          
+          if (this.isStrikeBanner) {
+            this.ctx.fillStyle = 'rgba(168, 85, 247, 0.95)';
+            this.ctx.fillRect(0, this.height / 2 - 50, this.width, 100);
+            
+            this.ctx.fillStyle = '#fbbf24';
+            this.ctx.shadowColor = '#fbbf24';
+            this.ctx.shadowBlur = 15;
+            this.ctx.font = 'bold 28px Rubik, sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(this.bannerText, this.width / 2, this.height / 2 - 12);
+
+            this.ctx.shadowBlur = 0;
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 15px Rubik, sans-serif';
+            this.ctx.fillText(this.bannerSubText, this.width / 2, this.height / 2 + 22);
+          } else {
+            this.ctx.fillStyle = 'rgba(168, 85, 247, 0.9)';
+            this.ctx.fillRect(0, this.height / 2 - 38, this.width, 76);
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 19px Rubik, sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(this.bannerText, this.width / 2, this.height / 2);
+          }
+          
+          this.ctx.restore();
+        }
+      }
+
+      loop() {
+        if (!this.active) return;
+        this.update();
+        this.draw();
+        this.animId = requestAnimationFrame(() => this.loop());
+      }
+    }
+
+    const bowlingGame = new BowlingGame('bowlingCanvas');
+
+    // --- CAR GAME WITH DIRECT FINGER TOUCH / DRAG MOVEMENT ---
+    const LEVEL_CONFIGS = [
+      { level: 1, name: 'שלב 1: נהיגה קלה', speed: 4.2, spawnRate: 0.008, movingChance: 0, roadColor: '#0f172a', laneColor: '#334155' },
+      { level: 2, name: 'שלב 2: שיוט רגוע', speed: 4.6, spawnRate: 0.011, movingChance: 0, roadColor: '#0f172a', laneColor: '#38bdf8' },
+      { level: 3, name: 'שלב 3: כביש עירוני', speed: 5.0, spawnRate: 0.014, movingChance: 0, roadColor: '#1e1b4b', laneColor: '#818cf8' },
+      { level: 4, name: 'שלב 4: מרוץ שקיעה', speed: 5.4, spawnRate: 0.017, movingChance: 0, roadColor: '#2e1065', laneColor: '#f43f5e' },
+      { level: 5, name: 'שלב 5: כביש מהיר', speed: 5.8, spawnRate: 0.020, movingChance: 0, roadColor: '#1e1b4b', laneColor: '#6366f1' },
+      { level: 6, name: 'שלב 6: עקפי תנועה', speed: 6.2, spawnRate: 0.023, movingChance: 0.10, roadColor: '#090d16', laneColor: '#10b981' },
+      { level: 7, name: 'שלב 7: מרוץ לילה', speed: 6.6, spawnRate: 0.026, movingChance: 0.25, roadColor: '#050811', laneColor: '#fbbf24' },
+      { level: 8, name: 'שלב 8: כביש מתפתל', speed: 7.0, spawnRate: 0.029, movingChance: 0.40, roadColor: '#180828', laneColor: '#a855f7' },
+      { level: 9, name: 'שלב 9: מרוץ מכוניות זזות', speed: 7.4, spawnRate: 0.032, movingChance: 0.60, roadColor: '#1a0d2a', laneColor: '#ec4899' },
+      { level: 10, name: 'שלב 10: 🌀 סופר זגזג!', speed: 7.8, spawnRate: 0.036, movingChance: 0.80, roadColor: '#022c22', laneColor: '#34d399' }
+    ];
+
+    class CarGame {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+        
+        this.player = { x: this.width / 2 - 21, y: this.height - 110, w: 42, h: 75, speed: 6.5 };
+        this.currentLevelIdx = 0;
+        this.coinsInCurrentLevel = 0;
+        this.obstacles = [];
+        this.coins = [];
+        this.score = 0;
+        this.highScore = parseInt(localStorage.getItem('car_highscore') || '0');
+        this.roadOffset = 0;
+        this.active = false;
+        this.animId = null;
+        this.levelBannerTimer = 0;
+        this.levelBannerText = '';
+
+        this.keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false };
+        this.setupControls();
+        document.getElementById('carHighScore').textContent = this.highScore;
+      }
+
+      setupControls() {
+        window.addEventListener('keydown', e => {
+          if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'a', 'd', 'w', 's'].includes(e.key)) {
+            if (e.key === 'ArrowLeft' || e.key === 'a') this.keys.ArrowLeft = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') this.keys.ArrowRight = true;
+            if (e.key === 'ArrowUp' || e.key === 'w') this.keys.ArrowUp = true;
+            if (e.key === 'ArrowDown' || e.key === 's') this.keys.ArrowDown = true;
+          }
+        });
+
+        window.addEventListener('keyup', e => {
+          if (e.key === 'ArrowLeft' || e.key === 'a') this.keys.ArrowLeft = false;
+          if (e.key === 'ArrowRight' || e.key === 'd') this.keys.ArrowRight = false;
+          if (e.key === 'ArrowUp' || e.key === 'w') this.keys.ArrowUp = false;
+          if (e.key === 'ArrowDown' || e.key === 's') this.keys.ArrowDown = false;
+        });
+
+        const updateTouchPosition = (clientX) => {
+          if (!this.active) return;
+          const rect = this.canvas.getBoundingClientRect();
+          const canvasTouchX = (clientX - rect.left) * (this.width / rect.width);
+          this.player.x = canvasTouchX - this.player.w / 2;
+
+          if (this.player.x < 25) this.player.x = 25;
+          if (this.player.x > this.width - 25 - this.player.w) {
+            this.player.x = this.width - 25 - this.player.w;
+          }
+        };
+
+        this.canvas.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          if (e.touches && e.touches.length > 0) {
+            updateTouchPosition(e.touches[0].clientX);
+          }
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          if (e.touches && e.touches.length > 0) {
+            updateTouchPosition(e.touches[0].clientX);
+          }
+        }, { passive: false });
+
+        let isMouseDown = false;
+        this.canvas.addEventListener('mousedown', (e) => {
+          if (!this.active) return;
+          isMouseDown = true;
+          updateTouchPosition(e.clientX);
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+          if (isMouseDown && this.active) {
+            updateTouchPosition(e.clientX);
+          }
+        });
+
+        window.addEventListener('mouseup', () => { isMouseDown = false; });
+      }
+
+      start() {
+        this.score = 0;
+        this.currentLevelIdx = 0;
+        this.coinsInCurrentLevel = 0;
+        this.obstacles = [];
+        this.coins = [];
+        this.player.x = this.width / 2 - 21;
+        this.active = true;
+        this.levelBannerTimer = 90;
+        this.levelBannerText = LEVEL_CONFIGS[0].name;
+
+        document.getElementById('carScore').textContent = '0';
+        this.updateHUD();
+        document.getElementById('carOverlay').style.display = 'none';
+
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.loop();
+      }
+
+      updateHUD() {
+        const config = LEVEL_CONFIGS[this.currentLevelIdx];
+        document.getElementById('carLevelBadge').innerHTML = `שלב ${config.level} <span class="coin-progress">(🪙 ${this.coinsInCurrentLevel}/10)</span>`;
+      }
+
+      collectCoin() {
+        audio.playCoin();
+        this.score += 50;
+        this.coinsInCurrentLevel++;
+        document.getElementById('carScore').textContent = this.score;
+
+        if (this.coinsInCurrentLevel >= 10) {
+          this.coinsInCurrentLevel = 0;
+          if (this.currentLevelIdx < LEVEL_CONFIGS.length - 1) this.currentLevelIdx++;
+          const nextConfig = LEVEL_CONFIGS[this.currentLevelIdx];
+          this.levelBannerText = `⚡ LEVEL UP! ${nextConfig.name}`;
+          this.levelBannerTimer = 120;
+          audio.playLevelUp();
+          confetti.trigger();
+        }
+        this.updateHUD();
+      }
+
+      stop(isCrash = false) {
+        this.active = false;
+        if (this.animId) cancelAnimationFrame(this.animId);
+
+        if (this.score > this.highScore) {
+          this.highScore = this.score;
+          localStorage.setItem('car_highscore', this.highScore);
+          document.getElementById('carHighScore').textContent = this.highScore;
+          confetti.trigger();
+        }
+
+        const overlay = document.getElementById('carOverlay');
+        const title = document.getElementById('carOverlayTitle');
+        const desc = document.getElementById('carOverlayDesc');
+
+        overlay.style.display = 'flex';
+        if (isCrash) {
+          audio.playCrash();
+          const reachedLevel = LEVEL_CONFIGS[this.currentLevelIdx].level;
+          title.textContent = '💥 התרסקות!';
+          desc.innerHTML = `הגעת ל<strong>שלב ${reachedLevel}</strong> עם <strong>${this.score}</strong> נקודות!<br>השיא שלך: ${this.highScore}`;
+        }
+      }
+
+      spawnObstacle() {
+        const lanes = [45, 135, 225, 315];
+        const lane = lanes[Math.floor(Math.random() * lanes.length)];
+        const colors = ['#f43f5e', '#fbbf24', '#818cf8', '#ec4899', '#a855f7', '#34d399'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const config = LEVEL_CONFIGS[this.currentLevelIdx];
+        const isMoving = Math.random() < config.movingChance;
+        const moveDir = Math.random() > 0.5 ? 1 : -1;
+
+        this.obstacles.push({
+          x: lane, y: -90, w: 42, h: 75,
+          speed: config.speed * (0.65 + Math.random() * 0.35),
+          color: isMoving ? '#e11d48' : color,
+          isMoving: isMoving, moveDir: moveDir, moveSpeed: 1.8 + Math.random() * 1.2
+        });
+      }
+
+      spawnCoin() {
+        const lanes = [60, 150, 240, 330];
+        const lane = lanes[Math.floor(Math.random() * lanes.length)];
+        this.coins.push({ x: lane, y: -30, r: 12 });
+      }
+
+      update() {
+        if (!this.active) return;
+        const config = LEVEL_CONFIGS[this.currentLevelIdx];
+
+        if (this.keys.ArrowLeft && this.player.x > 25) this.player.x -= this.player.speed;
+        if (this.keys.ArrowRight && this.player.x < this.width - 25 - this.player.w) this.player.x += this.player.speed;
+
+        let currentSpeed = config.speed;
+        if (this.keys.ArrowUp) currentSpeed *= 1.4;
+        if (this.keys.ArrowDown) currentSpeed *= 0.6;
+
+        this.roadOffset = (this.roadOffset + currentSpeed) % 40;
+
+        if (Math.random() < config.spawnRate) this.spawnObstacle();
+        if (Math.random() < 0.035) this.spawnCoin();
+
+        for (let i = this.obstacles.length - 1; i >= 0; i--) {
+          const obs = this.obstacles[i];
+          obs.y += currentSpeed;
+
+          if (obs.isMoving) {
+            obs.x += obs.moveDir * obs.moveSpeed;
+            if (obs.x < 25) { obs.x = 25; obs.moveDir = 1; }
+            else if (obs.x > this.width - 25 - obs.w) { obs.x = this.width - 25 - obs.w; obs.moveDir = -1; }
+          }
+
+          if (
+            this.player.x < obs.x + obs.w &&
+            this.player.x + this.player.w > obs.x &&
+            this.player.y < obs.y + obs.h &&
+            this.player.y + this.player.h > obs.y
+          ) {
+            this.stop(true);
+            return;
+          }
+
+          if (obs.y > this.height + 100) {
+            this.obstacles.splice(i, 1);
+            this.score += 10;
+            document.getElementById('carScore').textContent = this.score;
+          }
+        }
+
+        for (let i = this.coins.length - 1; i >= 0; i--) {
+          const c = this.coins[i];
+          c.y += currentSpeed;
+          const dist = Math.hypot((this.player.x + this.player.w / 2) - c.x, (this.player.y + this.player.h / 2) - c.y);
+          if (dist < c.r + 25) {
+            this.coins.splice(i, 1);
+            this.collectCoin();
+          } else if (c.y > this.height + 50) {
+            this.coins.splice(i, 1);
+          }
+        }
+      }
+
+      drawCar(x, y, w, h, color, isPlayer = false, isMoving = false) {
+        this.ctx.save();
+        this.ctx.fillStyle = color;
+        if (isPlayer) { this.ctx.shadowColor = 'rgba(16, 185, 129, 0.7)'; this.ctx.shadowBlur = 14; }
+        else if (isMoving) { this.ctx.shadowColor = 'rgba(225, 29, 72, 0.8)'; this.ctx.shadowBlur = 16; }
+
+        this.ctx.beginPath(); this.ctx.roundRect(x, y, w, h, 10); this.ctx.fill();
+        this.ctx.shadowBlur = 0; this.ctx.fillStyle = '#0f172a';
+        this.ctx.beginPath(); this.ctx.roundRect(x + 5, y + 18, w - 10, h - 35, 6); this.ctx.fill();
+
+        this.ctx.fillStyle = isPlayer ? '#38bdf8' : (isMoving ? '#fbbf24' : '#f43f5e');
+        const lightY = isPlayer ? y + 4 : y + h - 8;
+        this.ctx.fillRect(x + 5, lightY, 8, 4); this.ctx.fillRect(x + w - 13, lightY, 8, 4);
+
+        if (isMoving && !isPlayer) {
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 12px sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.fillText('↔', x + w / 2, y + h / 2 + 4);
+        }
+        this.ctx.restore();
+      }
+
+      draw() {
+        const config = LEVEL_CONFIGS[this.currentLevelIdx];
+        this.ctx.fillStyle = config.roadColor;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+        this.ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        this.ctx.fillRect(20, 0, this.width - 40, this.height);
+
+        this.ctx.strokeStyle = config.laneColor;
+        this.ctx.lineWidth = 4;
+        this.ctx.setLineDash([20, 20]);
+        this.ctx.lineDashOffset = -this.roadOffset;
+
+        [110, 200, 290].forEach(laneX => {
+          this.ctx.beginPath(); this.ctx.moveTo(laneX, 0); this.ctx.lineTo(laneX, this.height); this.ctx.stroke();
+        });
+        this.ctx.setLineDash([]);
+
+        this.drawCar(this.player.x, this.player.y, this.player.w, this.player.h, '#10b981', true, false);
+        this.obstacles.forEach(obs => this.drawCar(obs.x, obs.y, obs.w, obs.h, obs.color, false, obs.isMoving));
+        this.coins.forEach(c => {
+          this.ctx.save();
+          this.ctx.fillStyle = '#fbbf24'; this.ctx.shadowColor = '#fbbf24'; this.ctx.shadowBlur = 10;
+          this.ctx.beginPath(); this.ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); this.ctx.fill();
+          this.ctx.fillStyle = '#b45309'; this.ctx.font = 'bold 12px sans-serif';
+          this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle';
+          this.ctx.fillText('★', c.x, c.y);
+          this.ctx.restore();
+        });
+
+        if (this.levelBannerTimer > 0) {
+          this.levelBannerTimer--;
+          this.ctx.save();
+          this.ctx.fillStyle = 'rgba(16, 185, 129, 0.88)';
+          this.ctx.fillRect(0, this.height / 2 - 38, this.width, 76);
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 19px Rubik, sans-serif';
+          this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(this.levelBannerText, this.width / 2, this.height / 2);
+          this.ctx.restore();
+        }
+      }
+
+      loop() {
+        if (!this.active) return;
+        this.update();
+        this.draw();
+        this.animId = requestAnimationFrame(() => this.loop());
+      }
+    }
+
+    const carGame = new CarGame('carCanvas');
+
+    // --- NAVIGATION & GAME SCREEN CONTROLLER ---
+    const hubScreen = document.getElementById('hubScreen');
+    const xoWelcomeScreen = document.getElementById('xoWelcomeScreen');
+    const xoGameScreen = document.getElementById('xoGameScreen');
+    const carGameScreen = document.getElementById('carGameScreen');
+    const bowlingSetupScreen = document.getElementById('bowlingSetupScreen');
+    const bowlingGameScreen = document.getElementById('bowlingGameScreen');
+    const trashGameScreen = document.getElementById('trashGameScreen');
+
+    const cardSelectXO = document.getElementById('cardSelectXO');
+    const cardSelectCar = document.getElementById('cardSelectCar');
+    const cardSelectBowling = document.getElementById('cardSelectBowling');
+    const cardSelectTrash = document.getElementById('cardSelectTrash');
+
+    const homeBtn = document.getElementById('homeBtn');
+    const mainTitle = document.getElementById('mainTitle');
+    const subTitleText = document.getElementById('subTitleText');
+
+    // --- BOWLING PLAYER COUNT DYNAMIC SELECTOR (1 TO 6 PLAYERS) ---
+    let bowlingSelectedPlayerCount = 4;
+
+    function renderBowlingPlayerInputs(count) {
+      const container = document.getElementById('bowlingPlayerInputs');
+      container.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.className = 'input-group';
+        div.innerHTML = `
+          <label for="bowlingP${i}">שחקן ${i}:</label>
+          <input type="text" id="bowlingP${i}" class="form-input" value="שחקן ${i}">
+        `;
+        container.appendChild(div);
+      }
+      document.getElementById('bowlingPlayerCountText').textContent = count;
+    }
+
+    document.getElementById('btnDecPlayers').addEventListener('click', () => {
+      audio.playClick();
+      if (bowlingSelectedPlayerCount > 1) {
+        bowlingSelectedPlayerCount--;
+        renderBowlingPlayerInputs(bowlingSelectedPlayerCount);
+      }
+    });
+
+    document.getElementById('btnIncPlayers').addEventListener('click', () => {
+      audio.playClick();
+      if (bowlingSelectedPlayerCount < 6) {
+        bowlingSelectedPlayerCount++;
+        renderBowlingPlayerInputs(bowlingSelectedPlayerCount);
+      }
+    });
+
+    // Initialize initial 4 player inputs
+    renderBowlingPlayerInputs(4);
+
+    function showScreen(targetScreen, title = 'המשחקים של לב', subtitle = 'בחר משחק להתחלת החוויה') {
+      audio.playClick();
+
+      [hubScreen, xoWelcomeScreen, xoGameScreen, carGameScreen, bowlingSetupScreen, bowlingGameScreen, trashGameScreen].forEach(s => s.classList.add('hidden'));
+      targetScreen.classList.remove('hidden');
+
+      mainTitle.textContent = title;
+      subTitleText.textContent = subtitle;
+
+      if (targetScreen === hubScreen) {
+        homeBtn.classList.add('hidden');
+        if (carGame.active) carGame.stop(false);
+        if (bowlingGame.active) bowlingGame.finishMatch();
+        if (trashGame.active) trashGame.stop();
+      } else {
+        homeBtn.classList.remove('hidden');
+      }
+    }
+
+    // Hub Cards Click Handlers
+    cardSelectXO.addEventListener('click', () => {
+      showScreen(xoWelcomeScreen, 'איקס עיגול', 'משחק זוגי עם תורות מתחלפים');
+    });
+
+    cardSelectCar.addEventListener('click', () => {
+      showScreen(carGameScreen, 'מרוץ מכוניות 🏎️', 'הזזת המכונית עם האצבע מצד לצד!');
+      document.getElementById('carOverlay').style.display = 'flex';
+    });
+
+    cardSelectBowling.addEventListener('click', () => {
+      showScreen(bowlingSetupScreen, 'טורניר באולינג 🎳', 'בחירת 1 עד 6 שחקנים בטורניר!');
+    });
+
+    cardSelectTrash.addEventListener('click', () => {
+      showScreen(trashGameScreen, 'זרוק לפח! 🗑️🤢', 'משוך ושחרר לזריקת האוכל לפח!');
+      document.getElementById('trashOverlay').style.display = 'flex';
+    });
+
+    // Setup Handlers
+    document.getElementById('btnStartXO').addEventListener('click', () => {
+      showScreen(xoGameScreen, 'איקס עיגול', 'תורות מתחלפים בכל סיבוב');
+      resetXOAllScores();
+    });
+
+    document.getElementById('btnStartBowlingGame').addEventListener('click', () => {
+      const names = [];
+      for (let i = 1; i <= bowlingSelectedPlayerCount; i++) {
+        const inp = document.getElementById(`bowlingP${i}`);
+        names.push(inp ? inp.value : `שחקן ${i}`);
+      }
+
+      showScreen(bowlingGameScreen, `טורניר באולינג (${bowlingSelectedPlayerCount} שחקנים) 🎳`, '2 זריקות ברצף לכל שחקן בתור!');
+      bowlingGame.startMatch(names);
+    });
+
+    document.getElementById('btnStartTrashGame').addEventListener('click', () => {
+      audio.playClick();
+      trashGame.start();
+    });
+
+    document.getElementById('btnBowlingAction').addEventListener('click', () => bowlingGame.action());
+    document.getElementById('btnRollBowlingAction').addEventListener('click', () => bowlingGame.action());
+
+    document.getElementById('btnBackFromXOWelcome').addEventListener('click', () => showScreen(hubScreen));
+    document.getElementById('btnBackFromBowlingSetup').addEventListener('click', () => showScreen(hubScreen));
+    document.getElementById('btnBackToMenuFromXO').addEventListener('click', () => showScreen(hubScreen));
+    document.getElementById('btnBackToMenuFromCar').addEventListener('click', () => showScreen(hubScreen));
+    document.getElementById('btnBackToMenuFromBowling').addEventListener('click', () => showScreen(hubScreen));
+    document.getElementById('btnBackToMenuFromTrash').addEventListener('click', () => showScreen(hubScreen));
+    homeBtn.addEventListener('click', () => showScreen(hubScreen));
+
+    document.getElementById('btnStartCarGame').addEventListener('click', () => {
+      audio.playClick();
+      carGame.start();
+    });
+
+    // --- XO GAME LOGIC ---
+    const WINNING_COMBOS = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    let xoGameState = Array(9).fill(null);
+    let xoRoundStarterPlayer = 1;
+    let xoCurrentPlayerSymbol = 'X';
+    let xoIsGameActive = true;
+    let xoScores = { P1: 0, P2: 0, Draw: 0 };
+
+    const cells = document.querySelectorAll('.cell');
+    const cardP1 = document.getElementById('cardP1');
+    const cardP2 = document.getElementById('cardP2');
+    const symbolP1 = document.getElementById('symbolP1');
+    const symbolP2 = document.getElementById('symbolP2');
+    const scoreP1El = document.getElementById('scoreP1');
+    const scoreP2El = document.getElementById('scoreP2');
+    const scoreDrawEl = document.getElementById('scoreDraw');
+    const nameP1Input = document.getElementById('nameP1');
+    const nameP2Input = document.getElementById('nameP2');
+    const statusBanner = document.getElementById('statusBanner');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+
+    function getSymbolForPlayer(playerNum) {
+      return xoRoundStarterPlayer === 1 ? (playerNum === 1 ? 'X' : 'O') : (playerNum === 2 ? 'X' : 'O');
+    }
+
+    function getPlayerNumForSymbol(symbol) {
+      return xoRoundStarterPlayer === 1 ? (symbol === 'X' ? 1 : 2) : (symbol === 'X' ? 2 : 1);
+    }
+
+    function getPlayerName(playerNum) {
+      if (playerNum === 1) return nameP1Input.value.trim() || 'שחקן 1';
+      if (playerNum === 2) return nameP2Input.value.trim() || 'שחקן 2';
+      return '';
+    }
+
+    function createSVGMark(type) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      if (type === 'X') {
+        svg.innerHTML = `
+          <line x1="20" y1="20" x2="80" y2="80" stroke-width="12" stroke-linecap="round"/>
+          <line x1="80" y1="20" x2="20" y2="80" stroke-width="12" stroke-linecap="round"/>
+        `;
+      } else {
+        svg.innerHTML = `<circle cx="50" cy="50" r="32" fill="none" stroke-width="12" stroke-linecap="round"/>`;
+      }
+      return svg;
+    }
+
+    function updateXOTurnUI() {
+      const sym1 = getSymbolForPlayer(1);
+      const sym2 = getSymbolForPlayer(2);
+
+      symbolP1.textContent = sym1 === 'X' ? '✕' : '◯';
+      symbolP1.className = `symbol-badge ${sym1 === 'X' ? 'badge-x' : 'badge-o'}`;
+      cardP1.className = `score-card ${sym1 === 'X' ? 'is-x' : 'is-o'}`;
+
+      symbolP2.textContent = sym2 === 'X' ? '✕' : '◯';
+      symbolP2.className = `symbol-badge ${sym2 === 'X' ? 'badge-x' : 'badge-o'}`;
+      cardP2.className = `score-card ${sym2 === 'X' ? 'is-x' : 'is-o'}`;
+
+      if (!xoIsGameActive) return;
+
+      const activePlayerNum = getPlayerNumForSymbol(xoCurrentPlayerSymbol);
+      const activePlayerName = getPlayerName(activePlayerNum);
+
+      statusText.textContent = `התור של ${activePlayerName} (${xoCurrentPlayerSymbol})`;
+
+      if (activePlayerNum === 1) {
+        cardP1.classList.add('active-turn');
+        cardP2.classList.remove('active-turn');
+      } else {
+        cardP2.classList.add('active-turn');
+        cardP1.classList.remove('active-turn');
+      }
+
+      statusIndicator.className = `turn-indicator turn-${xoCurrentPlayerSymbol.toLowerCase()}`;
+    }
+
+    function handleXOCellClick(e) {
+      const cell = e.currentTarget;
+      const index = parseInt(cell.dataset.index);
+
+      if (xoGameState[index] !== null || !xoIsGameActive) return;
+
+      if (xoCurrentPlayerSymbol === 'X') audio.playX();
+      else audio.playO();
+
+      xoGameState[index] = xoCurrentPlayerSymbol;
+      cell.classList.add('occupied', `mark-${xoCurrentPlayerSymbol.toLowerCase()}`);
+      cell.appendChild(createSVGMark(xoCurrentPlayerSymbol));
+
+      const winCombo = checkXOWin();
+
+      if (winCombo) {
+        handleXOWin(winCombo);
+      } else if (xoGameState.every(c => c !== null)) {
+        handleXODraw();
+      } else {
+        xoCurrentPlayerSymbol = xoCurrentPlayerSymbol === 'X' ? 'O' : 'X';
+        updateXOTurnUI();
+      }
+    }
+
+    function checkXOWin() {
+      for (const combo of WINNING_COMBOS) {
+        const [a, b, c] = combo;
+        if (xoGameState[a] && xoGameState[a] === xoGameState[b] && xoGameState[a] === xoGameState[c]) {
+          return combo;
+        }
+      }
+      return null;
+    }
+
+    function handleXOWin(combo) {
+      xoIsGameActive = false;
+      const winningPlayerNum = getPlayerNumForSymbol(xoCurrentPlayerSymbol);
+      xoScores[`P${winningPlayerNum}`]++;
+      updateXOScoresUI();
+
+      const winnerName = getPlayerName(winningPlayerNum);
+      statusText.textContent = `🏆 ${winnerName} (${xoCurrentPlayerSymbol}) ניצח!`;
+      statusIndicator.className = `turn-indicator turn-${xoCurrentPlayerSymbol.toLowerCase()}`;
+
+      combo.forEach(idx => cells[idx].classList.add('winning-cell', `mark-${xoCurrentPlayerSymbol.toLowerCase()}`));
+
+      audio.playVictoryFanfare();
+      confetti.trigger();
+    }
+
+    function handleXODraw() {
+      xoIsGameActive = false;
+      xoScores.Draw++;
+      updateXOScoresUI();
+
+      statusText.textContent = `🤝 תיקו! משחק שקול`;
+      cardP1.classList.remove('active-turn');
+      cardP2.classList.remove('active-turn');
+
+      audio.playDraw();
+    }
+
+    function updateXOScoresUI() {
+      scoreP1El.textContent = xoScores.P1;
+      scoreP2El.textContent = xoScores.P2;
+      scoreDrawEl.textContent = xoScores.Draw;
+    }
+
+    function resetXOGameRound(alternateStarter = true) {
+      audio.playClick();
+      if (alternateStarter) xoRoundStarterPlayer = xoRoundStarterPlayer === 1 ? 2 : 1;
+
+      xoGameState = Array(9).fill(null);
+      xoCurrentPlayerSymbol = 'X';
+      xoIsGameActive = true;
+
+      cells.forEach(cell => { cell.className = 'cell'; cell.innerHTML = ''; });
+      updateXOTurnUI();
+    }
+
+    function resetXOAllScores() {
+      audio.playClick();
+      xoScores = { P1: 0, P2: 0, Draw: 0 };
+      updateXOScoresUI();
+      xoRoundStarterPlayer = 1;
+      resetXOGameRound(false);
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', handleXOCellClick));
+    document.getElementById('btnResetGame').addEventListener('click', () => resetXOGameRound(true));
+    document.getElementById('btnResetScore').addEventListener('click', resetXOAllScores);
+
+    // Audio controls
+    const bgmToggle = document.getElementById('bgmToggle');
+    const sfxToggle = document.getElementById('sfxToggle');
+
+    bgmToggle.addEventListener('click', () => {
+      audio.init();
+      if (audio.bgmPlaying) {
+        audio.stopBGM();
+        bgmToggle.classList.add('muted');
+      } else {
+        audio.startBGM();
+        bgmToggle.classList.remove('muted');
+      }
+    });
+
+    sfxToggle.addEventListener('click', () => {
+      audio.sfxEnabled = !audio.sfxEnabled;
+      if (audio.sfxEnabled) sfxToggle.classList.remove('muted');
+      else sfxToggle.classList.add('muted');
+    });
+
+    // Initialize XO UI
+    updateXOTurnUI();
+  </script>
+</body>
+</html>
