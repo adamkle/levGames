@@ -530,10 +530,10 @@
     }
 
     .bowling-score {
-      font-size: 1.3rem;
+      font-size: 1.0rem;
       font-weight: 800;
       color: var(--color-bowling);
-      margin-top: 0.15rem;
+      margin-top: 0.1rem;
     }
 
     .bowling-rolls-left {
@@ -2730,7 +2730,9 @@
               r: 10,
               isHit: false,
               vx: 0,
-              vy: 0
+              vy: 0,
+              rotation: 0,
+              angularVel: 0
             });
           });
         });
@@ -3035,8 +3037,8 @@
           this.ctx.save();
           this.ctx.translate(pin.x, pin.y);
           if (pin.isHit) {
-            this.ctx.globalAlpha = 0.35;
-            this.ctx.rotate(0.6);
+            this.ctx.globalAlpha = 0.4;
+            this.ctx.rotate(pin.rotation || 0.6);
           }
 
           this.ctx.fillStyle = '#ffffff';
