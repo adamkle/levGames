@@ -24,7 +24,8 @@
       --color-bowling: #a855f7;
       --color-bowling-glow: rgba(168, 85, 247, 0.5);
       --color-trash: #f97316;
-      --color-trash-glow: rgba(249, 115, 22, 0.5);
+      --color-fishing: #06b6d4;
+      --color-fishing-glow: rgba(6, 182, 212, 0.5);
       
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
@@ -180,7 +181,7 @@
       opacity: 0.5;
     }
 
-    /* Hub Screen Cards - 2x2 Grid */
+    /* Hub Screen Cards Grid */
     .hub-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -587,7 +588,7 @@
       font-weight: 600;
     }
 
-    .game-canvas-wrapper, .bowling-canvas-wrapper, .trash-canvas-wrapper {
+    .game-canvas-wrapper, .bowling-canvas-wrapper, .trash-canvas-wrapper, .fishing-canvas-wrapper {
       position: relative;
       width: 100%;
       max-width: 400px;
@@ -625,12 +626,12 @@
 
     .touch-drag-hint {
       font-size: 0.85rem;
-      color: #f97316;
+      color: #06b6d4;
       font-weight: 700;
-      background: rgba(249, 115, 22, 0.15);
+      background: rgba(6, 182, 212, 0.15);
       padding: 0.4rem 0.8rem;
       border-radius: 20px;
-      border: 1px solid rgba(249, 115, 22, 0.3);
+      border: 1px solid rgba(6, 182, 212, 0.3);
       animation: pulse 1.5s infinite alternate;
     }
 
@@ -716,6 +717,13 @@
           <h3>זרוק לפח!</h3>
           <p>מכסה עולה ויורד! זרקו כשהפח פתוח!</p>
           <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #f97316, #ea580c);">🗑️ זרוק לפח</button>
+        </div>
+
+        <div class="game-card" id="cardSelectFishing" style="grid-column: span 2;">
+          <div class="game-card-icon">🎣🐟</div>
+          <h3>דייג דגים</h3>
+          <p>הזזת הקרס עם האצבע ותפיסת דגים בים!</p>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #06b6d4, #0891b2);">🎣 התחל לדוג</button>
         </div>
       </div>
     </div>
@@ -858,7 +866,6 @@
 
     <!-- SCREEN 5: Bowling Game Play Screen -->
     <div class="screen hidden" id="bowlingGameScreen">
-      <!-- DYNAMIC SCOREBOARD CONTAINING 1 TO 6 CARDS -->
       <div class="bowling-scoreboard" id="bowlingScoreboard">
         <!-- Rendered dynamically by JS -->
       </div>
@@ -915,6 +922,37 @@
 
       <div class="controls">
         <button class="btn btn-secondary" id="btnBackToMenuFromTrash">🏠 תפריט ראשי</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 7: FISHING GAME SCREEN -->
+    <div class="screen hidden" id="fishingGameScreen">
+      <div class="hud-bar">
+        <div>ניקוד: <strong id="fishingScore" style="color: var(--color-fishing); font-size: 1.1rem;">0</strong></div>
+        <div>זמן: <strong id="fishingTimerText" style="color: var(--color-draw); font-size: 1.1rem;">60s</strong></div>
+        <div>שיא: <strong id="fishingHighScore" style="color: var(--color-car); font-size: 1.1rem;">0</strong></div>
+      </div>
+
+      <div class="fishing-canvas-wrapper">
+        <canvas id="fishingCanvas" width="400" height="600"></canvas>
+        <div class="game-overlay" id="fishingOverlay">
+          <h2 id="fishingOverlayTitle" style="font-size: 2rem; color: #06b6d4;">🎣 דייג דגים</h2>
+          <p id="fishingOverlayDesc" style="color: var(--text-muted);">
+            <strong>👉 החלק עם האצבע על המסך להזזת הקרס! 🪝</strong><br>
+            תפוס כמה שיותר דגים לפני שהזמן מסתיים!
+          </p>
+          <button class="btn btn-primary" id="btnStartFishingGame" style="padding: 1rem 2rem; font-size: 1.1rem; background: linear-gradient(135deg, #06b6d4, #0891b2);">
+            🎣 התחל לדוג
+          </button>
+        </div>
+      </div>
+
+      <div class="touch-drag-hint">
+        👇 החלק עם האצבע להזזת הקרס 🪝 ותפוס דגים!
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-secondary" id="btnBackToMenuFromFishing">🏠 תפריט ראשי</button>
       </div>
     </div>
 
@@ -1174,19 +1212,296 @@
 
     const confetti = new Confetti('confetti-canvas');
 
-    // --- TRASH / FOOD THROWING GAME ENGINE ---
-    const FOOD_TYPES = [
-      { emoji: '🤢', name: 'מאכל רקוב' },
-      { emoji: '🐟', name: 'דג רקוב' },
-      { emoji: '🦴', name: 'עצם אכולה' },
-      { emoji: '🍌', name: 'קליפת בננה רקובה' },
-      { emoji: '🧀', name: 'גבינה מעופשת' },
-      { emoji: '🥑', name: 'אבוקדו מקולקל' },
-      { emoji: '🍎', name: 'ליבת תפוח' },
-      { emoji: '🍔', name: 'המבורגר ישן' },
-      { emoji: '🍕', name: 'פיצה רקובה' }
+    // --- FISHING GAME ENGINE (דייג דגים) ---
+    const FISH_SPECIES = [
+      { emoji: '🐟', name: 'דג כחול', pts: 50, speed: 1.5, size: 28 },
+      { emoji: '🐠', name: 'דג טרופי', pts: 100, speed: 2.2, size: 26 },
+      { emoji: '🐡', name: 'דג אבו נפחא', pts: 150, speed: 1.8, size: 30 },
+      { emoji: '🐙', name: 'תמנון', pts: 200, speed: 1.2, size: 34 },
+      { emoji: '🦑', name: 'דינון', pts: 220, speed: 2.5, size: 28 },
+      { emoji: '👑', name: 'דג זהב מלכותי!', pts: 500, speed: 3.2, size: 36 }
     ];
 
+    class FishingGame {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+
+        this.hook = { x: 200, y: 120, targetX: 200, depthTimer: 0 };
+        this.caughtFish = null;
+        this.fishes = [];
+        this.score = 0;
+        this.highScore = parseInt(localStorage.getItem('fishing_highscore') || '0');
+        this.timeLeft = 60;
+        this.timerInterval = null;
+        this.active = false;
+        this.animId = null;
+        this.bannerText = '';
+        this.bannerTimer = 0;
+
+        document.getElementById('fishingHighScore').textContent = this.highScore;
+        this.setupTouchControls();
+      }
+
+      setupTouchControls() {
+        const updateHookPos = (clientX) => {
+          if (!this.active) return;
+          const rect = this.canvas.getBoundingClientRect();
+          const canvasX = (clientX - rect.left) * (this.width / rect.width);
+          this.hook.targetX = Math.max(30, Math.min(this.width - 30, canvasX));
+        };
+
+        this.canvas.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          if (e.touches.length > 0) updateHookPos(e.touches[0].clientX);
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          if (e.touches.length > 0) updateHookPos(e.touches[0].clientX);
+        }, { passive: false });
+
+        let isMouseDown = false;
+        this.canvas.addEventListener('mousedown', (e) => {
+          if (!this.active) return;
+          isMouseDown = true;
+          updateHookPos(e.clientX);
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+          if (isMouseDown && this.active) updateHookPos(e.clientX);
+        });
+
+        window.addEventListener('mouseup', () => { isMouseDown = false; });
+      }
+
+      start() {
+        this.score = 0;
+        this.timeLeft = 60;
+        this.active = true;
+        this.fishes = [];
+        this.caughtFish = null;
+        this.hook.x = 200;
+        this.hook.targetX = 200;
+        this.hook.y = 120;
+
+        document.getElementById('fishingScore').textContent = '0';
+        document.getElementById('fishingTimerText').textContent = '60s';
+        document.getElementById('fishingOverlay').style.display = 'none';
+
+        // Spawn initial school of fish
+        for (let i = 0; i < 7; i++) {
+          this.spawnFish();
+        }
+
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => {
+          if (!this.active) return;
+          this.timeLeft--;
+          document.getElementById('fishingTimerText').textContent = `${this.timeLeft}s`;
+          if (this.timeLeft <= 0) {
+            this.stop();
+          }
+        }, 1000);
+
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.loop();
+      }
+
+      spawnFish() {
+        const species = FISH_SPECIES[Math.floor(Math.random() * FISH_SPECIES.length)];
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        const x = dir === 1 ? -40 : this.width + 40;
+        const y = 180 + Math.random() * 370;
+
+        this.fishes.push({
+          x: x,
+          y: y,
+          dir: dir,
+          speed: species.speed * (0.8 + Math.random() * 0.4),
+          species: species
+        });
+      }
+
+      stop() {
+        this.active = false;
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.animId) cancelAnimationFrame(this.animId);
+
+        if (this.score > this.highScore) {
+          this.highScore = this.score;
+          localStorage.setItem('fishing_highscore', this.highScore);
+          document.getElementById('fishingHighScore').textContent = this.highScore;
+          confetti.trigger();
+        }
+
+        const overlay = document.getElementById('fishingOverlay');
+        const title = document.getElementById('fishingOverlayTitle');
+        const desc = document.getElementById('fishingOverlayDesc');
+
+        overlay.style.display = 'flex';
+        title.textContent = '🏆 סיום זמן הדיג!';
+        desc.innerHTML = `תפסת דגים בשווי <strong>${this.score}</strong> נקודות!<br>השיא שלך: ${this.highScore}`;
+      }
+
+      update() {
+        if (!this.active) return;
+
+        // Smooth hook movement horizontally
+        this.hook.x += (this.hook.targetX - this.hook.x) * 0.15;
+
+        // Hook vertical oscillation depth (rising and dipping into ocean)
+        this.hook.depthTimer += 0.035;
+        if (!this.caughtFish) {
+          this.hook.y = 200 + Math.sin(this.hook.depthTimer) * 220; // Goes from y=100 (top) down to y=420 (deep ocean)
+        } else {
+          // Reel up caught fish to boat at y=90!
+          this.hook.y -= 7;
+          if (this.hook.y <= 95) {
+            // Fish reached boat!
+            this.score += this.caughtFish.species.pts;
+            document.getElementById('fishingScore').textContent = this.score;
+
+            this.bannerText = `🎣 תפסת ${this.caughtFish.species.name}! (+${this.caughtFish.species.pts} נק׳)`;
+            this.bannerTimer = 60;
+
+            if (this.caughtFish.species.pts >= 250) {
+              audio.playVictoryFanfare();
+              confetti.trigger();
+            } else {
+              audio.playCoin();
+            }
+
+            this.caughtFish = null;
+          }
+        }
+
+        // Keep fish population floating
+        if (this.fishes.length < 8 && Math.random() < 0.04) {
+          this.spawnFish();
+        }
+
+        // Update fish swimming
+        for (let i = this.fishes.length - 1; i >= 0; i--) {
+          const fish = this.fishes[i];
+          fish.x += fish.dir * fish.speed;
+
+          // Check Hook Collision if no fish currently caught
+          if (!this.caughtFish) {
+            const dist = Math.hypot(this.hook.x - fish.x, (this.hook.y + 15) - fish.y);
+            if (dist < 32) {
+              // HOOKED!
+              this.caughtFish = fish;
+              this.fishes.splice(i, 1);
+              audio.playBasketScore();
+              continue;
+            }
+          }
+
+          // Out of bounds
+          if ((fish.dir === 1 && fish.x > this.width + 60) || (fish.dir === -1 && fish.x < -60)) {
+            this.fishes.splice(i, 1);
+          }
+        }
+      }
+
+      draw() {
+        // Sky & Sea Background
+        this.ctx.fillStyle = '#38bdf8';
+        this.ctx.fillRect(0, 0, this.width, 90); // Sky / Surface
+
+        // Ocean Gradient
+        const oceanGrad = this.ctx.createLinearGradient(0, 90, 0, this.height);
+        oceanGrad.addColorStop(0, '#0284c7');
+        oceanGrad.addColorStop(0.5, '#0369a1');
+        oceanGrad.addColorStop(1, '#0f172a');
+        this.ctx.fillStyle = oceanGrad;
+        this.ctx.fillRect(0, 90, this.width, this.height - 90);
+
+        // Draw Boat on surface
+        this.ctx.save();
+        this.ctx.fillStyle = '#b45309';
+        this.ctx.beginPath();
+        this.ctx.arc(this.hook.x, 88, 30, 0, Math.PI);
+        this.ctx.fill();
+
+        // Fisherman Emoji
+        this.ctx.font = '24px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('👨‍ג', this.hook.x, 70);
+        this.ctx.restore();
+
+        // Draw Fishing Line (Wire)
+        this.ctx.save();
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.hook.x, 75);
+        this.ctx.lineTo(this.hook.x, this.hook.y);
+        this.ctx.stroke();
+
+        // Draw Fishing Hook (🪝)
+        this.ctx.font = '28px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'top';
+        this.ctx.fillText('🪝', this.hook.x, this.hook.y - 4);
+        this.ctx.restore();
+
+        // Draw Caught Fish attached to Hook
+        if (this.caughtFish) {
+          this.ctx.save();
+          this.ctx.font = '32px sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'top';
+          this.ctx.fillText(this.caughtFish.species.emoji, this.hook.x, this.hook.y + 14);
+          this.ctx.restore();
+        }
+
+        // Draw Swimming Fishes
+        this.fishes.forEach(fish => {
+          this.ctx.save();
+          this.ctx.font = `${fish.species.size}px sans-serif`;
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+
+          if (fish.dir === -1) {
+            this.ctx.translate(fish.x, fish.y);
+            this.ctx.scale(-1, 1);
+            this.ctx.fillText(fish.species.emoji, 0, 0);
+          } else {
+            this.ctx.fillText(fish.species.emoji, fish.x, fish.y);
+          }
+          this.ctx.restore();
+        });
+
+        // Banner Toast Feedback
+        if (this.bannerTimer > 0) {
+          this.bannerTimer--;
+          this.ctx.save();
+          this.ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+          this.ctx.fillRect(0, this.height / 2 - 30, this.width, 60);
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 18px Rubik, sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(this.bannerText, this.width / 2, this.height / 2);
+          this.ctx.restore();
+        }
+      }
+
+      loop() {
+        if (!this.active) return;
+        this.update();
+        this.draw();
+        this.animId = requestAnimationFrame(() => this.loop());
+      }
+    }
+
+    const fishingGame = new FishingGame('fishingCanvas');
+
+    // --- TRASH / FOOD THROWING GAME ENGINE (STATIONARY BIN WITH ANIMATED OPENING/CLOSING LID) ---
     class TrashGame {
       constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -1498,7 +1813,7 @@
 
     const trashGame = new TrashGame('trashCanvas');
 
-    // --- BOWLING GAME LOGIC WITH DYNAMIC 1 TO 6 PLAYERS & STRIKE 2X ---
+    // --- BOWLING GAME LOGIC ---
     class BowlingGame {
       constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -1956,7 +2271,7 @@
 
     const bowlingGame = new BowlingGame('bowlingCanvas');
 
-    // --- CAR GAME WITH DIRECT FINGER TOUCH / DRAG MOVEMENT ---
+    // --- CAR GAME ---
     const LEVEL_CONFIGS = [
       { level: 1, name: 'שלב 1: נהיגה קלה', speed: 4.2, spawnRate: 0.008, movingChance: 0, roadColor: '#0f172a', laneColor: '#334155' },
       { level: 2, name: 'שלב 2: שיוט רגוע', speed: 4.6, spawnRate: 0.011, movingChance: 0, roadColor: '#0f172a', laneColor: '#38bdf8' },
@@ -2282,17 +2597,18 @@
     const bowlingSetupScreen = document.getElementById('bowlingSetupScreen');
     const bowlingGameScreen = document.getElementById('bowlingGameScreen');
     const trashGameScreen = document.getElementById('trashGameScreen');
+    const fishingGameScreen = document.getElementById('fishingGameScreen');
 
     const cardSelectXO = document.getElementById('cardSelectXO');
     const cardSelectCar = document.getElementById('cardSelectCar');
     const cardSelectBowling = document.getElementById('cardSelectBowling');
     const cardSelectTrash = document.getElementById('cardSelectTrash');
+    const cardSelectFishing = document.getElementById('cardSelectFishing');
 
     const homeBtn = document.getElementById('homeBtn');
     const mainTitle = document.getElementById('mainTitle');
     const subTitleText = document.getElementById('subTitleText');
 
-    // --- BOWLING PLAYER COUNT DYNAMIC SELECTOR (1 TO 6 PLAYERS) ---
     let bowlingSelectedPlayerCount = 4;
 
     function renderBowlingPlayerInputs(count) {
@@ -2326,13 +2642,12 @@
       }
     });
 
-    // Initialize initial 4 player inputs
     renderBowlingPlayerInputs(4);
 
     function showScreen(targetScreen, title = 'המשחקים של לב', subtitle = 'בחר משחק להתחלת החוויה') {
       audio.playClick();
 
-      [hubScreen, xoWelcomeScreen, xoGameScreen, carGameScreen, bowlingSetupScreen, bowlingGameScreen, trashGameScreen].forEach(s => s.classList.add('hidden'));
+      [hubScreen, xoWelcomeScreen, xoGameScreen, carGameScreen, bowlingSetupScreen, bowlingGameScreen, trashGameScreen, fishingGameScreen].forEach(s => s.classList.add('hidden'));
       targetScreen.classList.remove('hidden');
 
       mainTitle.textContent = title;
@@ -2343,12 +2658,12 @@
         if (carGame.active) carGame.stop(false);
         if (bowlingGame.active) bowlingGame.finishMatch();
         if (trashGame.active) trashGame.stop();
+        if (fishingGame.active) fishingGame.stop();
       } else {
         homeBtn.classList.remove('hidden');
       }
     }
 
-    // Hub Cards Click Handlers
     cardSelectXO.addEventListener('click', () => {
       showScreen(xoWelcomeScreen, 'איקס עיגול', 'משחק זוגי עם תורות מתחלפים');
     });
@@ -2367,7 +2682,11 @@
       document.getElementById('trashOverlay').style.display = 'flex';
     });
 
-    // Setup Handlers
+    cardSelectFishing.addEventListener('click', () => {
+      showScreen(fishingGameScreen, 'דייג דגים 🎣🐟', 'הזזת הקרס עם האצבע ותפיסת דגים!');
+      document.getElementById('fishingOverlay').style.display = 'flex';
+    });
+
     document.getElementById('btnStartXO').addEventListener('click', () => {
       showScreen(xoGameScreen, 'איקס עיגול', 'תורות מתחלפים בכל סיבוב');
       resetXOAllScores();
@@ -2389,6 +2708,11 @@
       trashGame.start();
     });
 
+    document.getElementById('btnStartFishingGame').addEventListener('click', () => {
+      audio.playClick();
+      fishingGame.start();
+    });
+
     document.getElementById('btnBowlingAction').addEventListener('click', () => bowlingGame.action());
     document.getElementById('btnRollBowlingAction').addEventListener('click', () => bowlingGame.action());
 
@@ -2398,6 +2722,7 @@
     document.getElementById('btnBackToMenuFromCar').addEventListener('click', () => showScreen(hubScreen));
     document.getElementById('btnBackToMenuFromBowling').addEventListener('click', () => showScreen(hubScreen));
     document.getElementById('btnBackToMenuFromTrash').addEventListener('click', () => showScreen(hubScreen));
+    document.getElementById('btnBackToMenuFromFishing').addEventListener('click', () => showScreen(hubScreen));
     homeBtn.addEventListener('click', () => showScreen(hubScreen));
 
     document.getElementById('btnStartCarGame').addEventListener('click', () => {
