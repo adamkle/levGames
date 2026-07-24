@@ -105,6 +105,12 @@
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    .hidden {
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
     .screen.hidden {
       display: none !important;
       opacity: 0;
@@ -203,6 +209,11 @@
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      touch-action: manipulation;
+    }
+
+    .game-card * {
+      pointer-events: none;
     }
 
     .game-card:hover, .game-card:active {
@@ -481,7 +492,7 @@
       color: var(--text-main);
     }
 
-    /* BOWLING DYNAMIC SCOREBOARD (1 TO 6 PLAYERS) */
+    /* BOWLING DYNAMIC SCOREBOARD */
     .bowling-scoreboard {
       display: flex;
       flex-wrap: wrap;
@@ -583,12 +594,13 @@
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 16px;
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.85rem;
       font-weight: 600;
+      gap: 0.4rem;
     }
 
-    .game-canvas-wrapper, .bowling-canvas-wrapper, .trash-canvas-wrapper, .fishing-canvas-wrapper {
+    .game-canvas-wrapper, .bowling-canvas-wrapper, .trash-canvas-wrapper, .fishing-canvas-wrapper, .claw-canvas-wrapper {
       position: relative;
       width: 100%;
       max-width: 400px;
@@ -622,6 +634,75 @@
       gap: 1rem;
       padding: 1.5rem;
       text-align: center;
+    }
+
+    /* FISHING UPGRADES SHOP MODAL */
+    .shop-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.2rem;
+    }
+
+    .shop-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 1.5rem 1.2rem;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .upgrade-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .upgrade-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .upgrade-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--color-fishing);
+    }
+
+    .upgrade-level {
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(6, 182, 212, 0.2);
+      color: #06b6d4;
+      padding: 0.2rem 0.6rem;
+      border-radius: 10px;
+    }
+
+    .upgrade-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.3;
     }
 
     .touch-drag-hint {
@@ -719,11 +800,18 @@
           <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #f97316, #ea580c);">🗑️ זרוק לפח</button>
         </div>
 
-        <div class="game-card" id="cardSelectFishing" style="grid-column: span 2;">
+        <div class="game-card" id="cardSelectFishing">
           <div class="game-card-icon">🎣🐟</div>
           <h3>דייג דגים</h3>
-          <p>הזזת הקרס עם האצבע ותפיסת דגים בים!</p>
+          <p>הזזת הקרס + חנות שדרוגים! 🛒</p>
           <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #06b6d4, #0891b2);">🎣 התחל לדוג</button>
+        </div>
+
+        <div class="game-card" id="cardSelectClaw">
+          <div class="game-card-icon">🏗️💎</div>
+          <h3>צבת אוצרות</h3>
+          <p>הורד צבת חכה, חכה, ולחץ לסגור ולתפוס! 🔒</p>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #eab308, #ca8a04);">🏗️ תפוס אוצר</button>
         </div>
       </div>
     </div>
@@ -925,12 +1013,12 @@
       </div>
     </div>
 
-    <!-- SCREEN 7: FISHING GAME SCREEN -->
+    <!-- SCREEN 7: FISHING GAME SCREEN WITH SHOP -->
     <div class="screen hidden" id="fishingGameScreen">
       <div class="hud-bar">
         <div>ניקוד: <strong id="fishingScore" style="color: var(--color-fishing); font-size: 1.1rem;">0</strong></div>
         <div>זמן: <strong id="fishingTimerText" style="color: var(--color-draw); font-size: 1.1rem;">60s</strong></div>
-        <div>שיא: <strong id="fishingHighScore" style="color: var(--color-car); font-size: 1.1rem;">0</strong></div>
+        <div>מטבעות: <strong id="fishingCoinsText" style="color: #fbbf24; font-size: 1.1rem;">🪙 0</strong></div>
       </div>
 
       <div class="fishing-canvas-wrapper">
@@ -939,11 +1027,16 @@
           <h2 id="fishingOverlayTitle" style="font-size: 2rem; color: #06b6d4;">🎣 דייג דגים</h2>
           <p id="fishingOverlayDesc" style="color: var(--text-muted);">
             <strong>👉 החלק עם האצבע על המסך להזזת הקרס! 🪝</strong><br>
-            תפוס כמה שיותר דגים לפני שהזמן מסתיים!
+            תפוס דגים, צבור מטבעות ושפר את החכה והסירה בחנות!
           </p>
-          <button class="btn btn-primary" id="btnStartFishingGame" style="padding: 1rem 2rem; font-size: 1.1rem; background: linear-gradient(135deg, #06b6d4, #0891b2);">
-            🎣 התחל לדוג
-          </button>
+          <div style="display: flex; gap: 0.6rem; width: 100%; justify-content: center;">
+            <button class="btn btn-primary" id="btnStartFishingGame" style="flex: 1; padding: 1rem; font-size: 1.05rem; background: linear-gradient(135deg, #06b6d4, #0891b2);">
+              🎣 התחל לדוג
+            </button>
+            <button class="btn btn-secondary" id="btnOpenShopFromOverlay" style="flex: 1; padding: 1rem; font-size: 1.05rem; border-color: #fbbf24; color: #fbbf24;">
+              🛒 חנות שדרוגים
+            </button>
+          </div>
         </div>
       </div>
 
@@ -952,7 +1045,96 @@
       </div>
 
       <div class="controls">
+        <button class="btn btn-primary" id="btnOpenShopInGame" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+          🛒 חנות שדרוגים (שפר חכה/סירה)
+        </button>
         <button class="btn btn-secondary" id="btnBackToMenuFromFishing">🏠 תפריט ראשי</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 6: Claw Treasure Miner Game Screen -->
+    <div class="screen hidden" id="clawGameScreen">
+      <div class="hud-bar">
+        <div>ניקוד: <strong id="clawScore" style="color: #eab308; font-size: 1.1rem;">0</strong></div>
+        <div>זמן: <strong id="clawTimerText" style="color: #ef4444; font-size: 1.1rem;">60s</strong></div>
+        <div>קופה: <strong id="clawCoinsText" style="color: #fbbf24; font-size: 1.1rem;">🪙 0</strong></div>
+      </div>
+
+      <div class="claw-canvas-wrapper" style="position: relative; width: 100%; max-width: 400px; aspect-ratio: 2 / 3; border-radius: 20px; overflow: hidden; border: 2px solid var(--card-border); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); touch-action: none;">
+        <canvas id="clawCanvas" width="400" height="600"></canvas>
+        <div class="game-overlay" id="clawOverlay">
+          <h2 id="clawOverlayTitle" style="font-size: 2rem; color: #eab308;">🏗️ צבת אוצרות</h2>
+          <p id="clawOverlayDesc" style="color: var(--text-muted);">
+            <strong>👉 לחץ 'הורד צבת', חכה שהיא תרד למטה, ולחץ 'סגור צבת' לתפוס זהב ואוצרות! 🔒</strong>
+          </p>
+          <button class="btn btn-primary" id="btnStartClawGame" style="padding: 1rem 2rem; font-size: 1.1rem; background: linear-gradient(135deg, #eab308, #ca8a04);">
+            🏗️ התחל לשחק
+          </button>
+        </div>
+      </div>
+
+      <div class="touch-drag-hint">
+        👇 לחץ על הכפתורים למטה: הורד צבת ➔ סגור ותפוס!
+      </div>
+
+      <div class="controls" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn btn-primary" id="btnClawDrop" style="flex: 1; padding: 1rem; background: linear-gradient(135deg, #3b82f6, #1d4ed8); font-size: 1.05rem;">
+          👇 הורד צבת
+        </button>
+        <button class="btn btn-primary" id="btnClawSnap" style="flex: 1; padding: 1rem; background: linear-gradient(135deg, #10b981, #047857); font-size: 1.05rem;">
+          🔒 סגור צבת ותפוס!
+        </button>
+        <button class="btn btn-secondary" id="btnBackToMenuFromClaw" style="width: 100%;">🏠 תפריט ראשי</button>
+      </div>
+    </div>
+
+    <!-- UPGRADES SHOP MODAL -->
+    <div class="shop-modal hidden" id="shopModal">
+      <div class="shop-card">
+        <h2 style="font-size: 1.8rem; text-align: center; color: #fbbf24;">🛒 חנות שדרוגים לדיג</h2>
+        <div style="text-align: center; font-size: 1.2rem; font-weight: 800; color: #ffffff;">
+          קופה: <span id="shopCoinsDisplay" style="color: #fbbf24;">🪙 0</span> מטבעות
+        </div>
+
+        <!-- ROD UPGRADE ITEM -->
+        <div class="upgrade-item">
+          <div class="upgrade-header">
+            <span class="upgrade-title" id="rodTitle">🪝 שדרוג החכה</span>
+            <span class="upgrade-level" id="rodLevelBadge">רמה 1/8</span>
+          </div>
+          <div class="upgrade-desc" id="rodDescText">חכה בסיסית: טווח תפיסת דגים רגיל.</div>
+          <button class="btn btn-primary" id="btnBuyRodUpgrade" style="margin-top: 0.4rem; background: linear-gradient(135deg, #06b6d4, #0891b2);">
+            שדרג חכה (150 🪙)
+          </button>
+        </div>
+
+        <!-- BOAT UPGRADE ITEM -->
+        <div class="upgrade-item">
+          <div class="upgrade-header">
+            <span class="upgrade-title" id="boatTitle">⛵ שדרוג הסירה</span>
+            <span class="upgrade-level" id="boatLevelBadge">רמה 1/8</span>
+          </div>
+          <div class="upgrade-desc" id="boatDescText">סירת עץ: מהירות משיכה רגילה.</div>
+          <button class="btn btn-primary" id="btnBuyBoatUpgrade" style="margin-top: 0.4rem; background: linear-gradient(135deg, #10b981, #059669);">
+            שדרג סירה (200 🪙)
+          </button>
+        </div>
+
+        <!-- OCEAN WORLD PRESTIGE / REBIRTH ITEM -->
+        <div class="upgrade-item" id="prestigeBox" style="border-color: #fbbf24; background: rgba(251, 191, 36, 0.1);">
+          <div class="upgrade-header">
+            <span class="upgrade-title" style="color: #fbbf24;" id="prestigeTitle">🌟 עולם הים הבא (Rebirth)</span>
+            <span class="upgrade-level" style="background: #fbbf24; color: #0f172a;" id="oceanWorldBadge">עולם 1</span>
+          </div>
+          <div class="upgrade-desc" id="prestigeDescText">הגעת לכל השדרוגים המקסימליים (8/8)! שלם 3,000 מטבעות לעבור לעולם הבא, לאפס שדרוגים ולקבל מכפיל ניקוד ומטבעות כפול!</div>
+          <button class="btn btn-primary" id="btnPrestigeNextWorld" style="margin-top: 0.4rem; background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 1.05rem;">
+            🌟 עבור לעולם הבא (3,000 🪙)
+          </button>
+        </div>
+
+        <button class="btn btn-secondary" id="btnCloseShopModal" style="padding: 0.9rem;">
+          ❌ סגור חנות וחזור לדיג
+        </button>
       </div>
     </div>
 
@@ -1212,14 +1394,43 @@
 
     const confetti = new Confetti('confetti-canvas');
 
-    // --- FISHING GAME ENGINE (דייג דגים) ---
+    // --- FISHING GAME & UPGRADES SHOP ENGINE ---
     const FISH_SPECIES = [
-      { emoji: '🐟', name: 'דג כחול', pts: 50, speed: 1.5, size: 28 },
-      { emoji: '🐠', name: 'דג טרופי', pts: 100, speed: 2.2, size: 26 },
-      { emoji: '🐡', name: 'דג אבו נפחא', pts: 150, speed: 1.8, size: 30 },
-      { emoji: '🐙', name: 'תמנון', pts: 200, speed: 1.2, size: 34 },
-      { emoji: '🦑', name: 'דינון', pts: 220, speed: 2.5, size: 28 },
-      { emoji: '👑', name: 'דג זהב מלכותי!', pts: 500, speed: 3.2, size: 36 }
+      { emoji: '🐟', name: 'דג כחול', pts: 50, coins: 20, speed: 1.5, size: 28 },
+      { emoji: '🐠', name: 'דג טרופי', pts: 100, coins: 50, speed: 2.2, size: 26 },
+      { emoji: '🐡', name: 'דג אבו נפחא', pts: 150, coins: 75, speed: 1.8, size: 30 },
+      { emoji: '🐙', name: 'תמנון', pts: 200, coins: 100, speed: 1.2, size: 34 },
+      { emoji: '🦑', name: 'דינון', pts: 220, coins: 120, speed: 2.5, size: 28 },
+      { emoji: '👑', name: 'דג זהב מלכותי!', pts: 500, coins: 300, speed: 3.2, size: 36 }
+    ];
+
+    const ROD_UPGRADES = [
+      { level: 1, name: 'חכה בסיסית', desc: 'טווח תפיסת דגים רגיל', cost: 0, radius: 32, magnet: false, multiplier: 1, emoji: '🪝' },
+      { level: 2, name: 'חכת פלדה 🪝', desc: 'טווח תפיסה מורחב (+35%)', cost: 150, radius: 44, magnet: false, multiplier: 1, emoji: '🪝' },
+      { level: 3, name: 'חכה מורחבת 🪝✨', desc: 'טווח תפיסה ענק לתפיסת דגים בקלות!', cost: 350, radius: 56, magnet: false, multiplier: 1, emoji: '🪝' },
+      { level: 4, name: 'חכת מגנט קלה 🧲', desc: 'שדה מגנטי שמושך דגים קרובים אל הקרס!', cost: 600, radius: 64, magnet: true, multiplier: 1, emoji: '🧲' },
+      { level: 5, name: 'חכת מגנט חזקה 🧲⚡', desc: 'מגנט חזק + מכפיל ניקוד (1.5X)!', cost: 1000, radius: 72, magnet: true, multiplier: 1.5, emoji: '🧲' },
+      { level: 6, name: 'חכת זהב כפולה ✨', desc: 'מכפיל ניקוד ומטבעות כפול (2X)!', cost: 1800, radius: 80, magnet: true, multiplier: 2, emoji: '✨' },
+      { level: 7, name: 'חכת יהלום 3X 💎', desc: 'מכפיל ניקוד ומטבעות משולש (3X)!', cost: 3000, radius: 90, magnet: true, multiplier: 3, emoji: '💎' },
+      { level: 8, name: 'חכת קוסמית אגדית 🌌', desc: 'מכפיל ניקוד ומטבעות ענק (5X)!', cost: 5000, radius: 100, magnet: true, multiplier: 5, emoji: '🌌' }
+    ];
+
+    const BOAT_UPGRADES = [
+      { level: 1, name: 'סירת עץ 🛶', desc: 'מהירות משיכה רגילה למעלה', cost: 0, speed: 7, extraTime: 0, goldenChance: 0, boatEmoji: '🛶' },
+      { level: 2, name: 'סירת משוטים משודרגת 🚣', desc: 'משיכה מהירה + 5 שניות בונוס לזמן', cost: 200, speed: 10, extraTime: 5, goldenChance: 0.03, boatEmoji: '🚣' },
+      { level: 3, name: 'סירת מנוע 🚤', desc: 'מהירות משיכה כפולה (2X) + 10 שניות בונוס', cost: 400, speed: 15, extraTime: 10, goldenChance: 0.06, boatEmoji: '🚤' },
+      { level: 4, name: 'סירה מהירה 🚤💨', desc: 'משיכה מהירה + 15 שניות בונוס', cost: 800, speed: 20, extraTime: 15, goldenChance: 0.10, boatEmoji: '🚤' },
+      { level: 5, name: 'סירת טורבו 🛥️', desc: 'משיכת בזק + 20 שניות בונוס לזמן הדיג!', cost: 1300, speed: 26, extraTime: 20, goldenChance: 0.15, boatEmoji: '🛥️' },
+      { level: 6, name: 'יאכטה מפוארת 🛥️✨', desc: 'משיכה סופר מהירה + 30 שניות בונוס!', cost: 2200, speed: 32, extraTime: 30, goldenChance: 0.20, boatEmoji: '🛥️' },
+      { level: 7, name: 'ספינת קרב 🚢', desc: 'משיכה מיידית + 40 שניות בונוס!', cost: 3500, speed: 40, extraTime: 40, goldenChance: 0.30, boatEmoji: '🚢' },
+      { level: 8, name: 'ספינת זהב אגדית 🌟🚢', desc: 'משיכת שיא + דקה שלמה (60s) בונוס + המון דגי זהב!', cost: 6000, speed: 50, extraTime: 60, goldenChance: 0.45, boatEmoji: '🚢' }
+    ];
+
+    const OCEAN_WORLDS = [
+      { level: 1, name: '🌊 אוקיינוס כחול', multiplier: 1, colorTop: '#0284c7', colorBot: '#0f172a', skyColor: '#38bdf8' },
+      { level: 2, name: '🌅 ים השקיעה הסגול', multiplier: 2, colorTop: '#7c3aed', colorBot: '#2e1065', skyColor: '#f43f5e' },
+      { level: 3, name: '🌌 אוקיינוס הגלקסיה', multiplier: 3, colorTop: '#0f172a', colorBot: '#020617', skyColor: '#818cf8' },
+      { level: 4, name: '✨ ים הזהב האגדי', multiplier: 5, colorTop: '#b45309', colorBot: '#451a03', skyColor: '#fbbf24' }
     ];
 
     class FishingGame {
@@ -1233,7 +1444,12 @@
         this.caughtFish = null;
         this.fishes = [];
         this.score = 0;
+        this.coins = parseInt(localStorage.getItem('fishing_coins') || '150');
+        this.rodLevel = parseInt(localStorage.getItem('fishing_rod_level') || '1');
+        this.boatLevel = parseInt(localStorage.getItem('fishing_boat_level') || '1');
+        this.oceanLevel = parseInt(localStorage.getItem('fishing_ocean_level') || '1');
         this.highScore = parseInt(localStorage.getItem('fishing_highscore') || '0');
+
         this.timeLeft = 60;
         this.timerInterval = null;
         this.active = false;
@@ -1241,8 +1457,31 @@
         this.bannerText = '';
         this.bannerTimer = 0;
 
-        document.getElementById('fishingHighScore').textContent = this.highScore;
+        this.bombs = [];
+        this.explosions = [];
+
+        this.updateCoinsUI();
         this.setupTouchControls();
+        this.setupShopUI();
+      }
+
+      updateCoinsUI() {
+        document.getElementById('fishingCoinsText').textContent = `🪙 ${this.coins}`;
+        document.getElementById('shopCoinsDisplay').textContent = `🪙 ${this.coins}`;
+      }
+
+      getRod() { return ROD_UPGRADES[this.rodLevel - 1] || ROD_UPGRADES[0]; }
+      getBoat() { return BOAT_UPGRADES[this.boatLevel - 1] || BOAT_UPGRADES[0]; }
+      getOcean() {
+        const idx = Math.min(this.oceanLevel - 1, OCEAN_WORLDS.length - 1);
+        return OCEAN_WORLDS[idx] || OCEAN_WORLDS[0];
+      }
+      getRebirthCost() {
+        const costs = [1500, 3500, 7500, 15000];
+        if (this.oceanLevel <= costs.length) {
+          return costs[this.oceanLevel - 1];
+        }
+        return 15000 + (this.oceanLevel - 4) * 10000;
       }
 
       setupTouchControls() {
@@ -1277,24 +1516,170 @@
         window.addEventListener('mouseup', () => { isMouseDown = false; });
       }
 
+      setupShopUI() {
+        const shopModal = document.getElementById('shopModal');
+        
+        const openShopModal = (e) => {
+          if (e) e.stopPropagation();
+          audio.playClick();
+          this.updateShopCardsUI();
+          shopModal.classList.remove('hidden');
+          shopModal.style.display = 'flex';
+        };
+
+        const closeShopModal = (e) => {
+          if (e) e.stopPropagation();
+          audio.playClick();
+          shopModal.classList.add('hidden');
+          shopModal.style.display = 'none';
+        };
+
+        const btnOpenInGame = document.getElementById('btnOpenShopInGame');
+        const btnOpenOverlay = document.getElementById('btnOpenShopFromOverlay');
+        const btnClose = document.getElementById('btnCloseShopModal');
+
+        if (btnOpenInGame) btnOpenInGame.addEventListener('click', openShopModal);
+        if (btnOpenOverlay) btnOpenOverlay.addEventListener('click', openShopModal);
+        if (btnClose) {
+          btnClose.addEventListener('click', closeShopModal);
+          btnClose.addEventListener('touchend', closeShopModal);
+        }
+
+        document.getElementById('btnBuyRodUpgrade').addEventListener('click', () => {
+          if (this.rodLevel >= 8) return;
+          const nextRod = ROD_UPGRADES[this.rodLevel];
+          if (this.coins >= nextRod.cost) {
+            this.coins -= nextRod.cost;
+            this.rodLevel++;
+            localStorage.setItem('fishing_coins', this.coins);
+            localStorage.setItem('fishing_rod_level', this.rodLevel);
+            audio.playLevelUp();
+            confetti.trigger();
+            this.updateCoinsUI();
+            this.updateShopCardsUI();
+          } else {
+            audio.playCrash();
+          }
+        });
+
+        document.getElementById('btnBuyBoatUpgrade').addEventListener('click', () => {
+          if (this.boatLevel >= 8) return;
+          const nextBoat = BOAT_UPGRADES[this.boatLevel];
+          if (this.coins >= nextBoat.cost) {
+            this.coins -= nextBoat.cost;
+            this.boatLevel++;
+            localStorage.setItem('fishing_coins', this.coins);
+            localStorage.setItem('fishing_boat_level', this.boatLevel);
+            audio.playLevelUp();
+            confetti.trigger();
+            this.updateCoinsUI();
+            this.updateShopCardsUI();
+          } else {
+            audio.playCrash();
+          }
+        });
+
+        document.getElementById('btnPrestigeNextWorld').addEventListener('click', () => {
+          if (this.rodLevel < 8 || this.boatLevel < 8) {
+            audio.playCrash();
+            return;
+          }
+          const requiredCoins = this.getRebirthCost();
+          if (this.coins >= requiredCoins) {
+            this.coins -= requiredCoins;
+            this.oceanLevel++;
+            this.rodLevel = 1;
+            this.boatLevel = 1;
+
+            localStorage.setItem('fishing_coins', this.coins);
+            localStorage.setItem('fishing_rod_level', this.rodLevel);
+            localStorage.setItem('fishing_boat_level', this.boatLevel);
+            localStorage.setItem('fishing_ocean_level', this.oceanLevel);
+
+            audio.playVictoryFanfare();
+            confetti.trigger();
+
+            this.updateCoinsUI();
+            this.updateShopCardsUI();
+          } else {
+            audio.playCrash();
+          }
+        });
+      }
+
+      updateShopCardsUI() {
+        const rod = this.getRod();
+        const boat = this.getBoat();
+        const ocean = this.getOcean();
+        const requiredCoins = this.getRebirthCost();
+
+        document.getElementById('rodTitle').textContent = `🪝 ${rod.name}`;
+        document.getElementById('rodLevelBadge').textContent = `רמה ${this.rodLevel}/8`;
+        
+        const btnRod = document.getElementById('btnBuyRodUpgrade');
+        if (this.rodLevel < 8) {
+          const nextRod = ROD_UPGRADES[this.rodLevel];
+          document.getElementById('rodDescText').textContent = `נוכחי: ${rod.desc} | הבא: ${nextRod.desc}`;
+          btnRod.textContent = `שדרג ל-${nextRod.name} (${nextRod.cost} 🪙)`;
+          btnRod.disabled = this.coins < nextRod.cost;
+        } else {
+          document.getElementById('rodDescText').textContent = `✨ רמה מקסימלית (8/8)! ${rod.desc}`;
+          btnRod.textContent = `✨ חכה אגדית מקסימלית! ✨`;
+          btnRod.disabled = true;
+        }
+
+        document.getElementById('boatTitle').textContent = `⛵ ${boat.name}`;
+        document.getElementById('boatLevelBadge').textContent = `רמה ${this.boatLevel}/8`;
+
+        const btnBoat = document.getElementById('btnBuyBoatUpgrade');
+        if (this.boatLevel < 8) {
+          const nextBoat = BOAT_UPGRADES[this.boatLevel];
+          document.getElementById('boatDescText').textContent = `נוכחי: ${boat.desc} | הבא: ${nextBoat.desc}`;
+          btnBoat.textContent = `שדרג ל-${nextBoat.name} (${nextBoat.cost} 🪙)`;
+          btnBoat.disabled = this.coins < nextBoat.cost;
+        } else {
+          document.getElementById('boatDescText').textContent = `✨ רמה מקסימלית (8/8)! ${boat.desc}`;
+          btnBoat.textContent = `✨ ספינה אגדית מקסימלית! ✨`;
+          btnBoat.disabled = true;
+        }
+
+        const btnPrestige = document.getElementById('btnPrestigeNextWorld');
+        const isMaxUpgrades = (this.rodLevel >= 8 && this.boatLevel >= 8);
+        document.getElementById('oceanWorldBadge').textContent = `${ocean.name} (עולם ${this.oceanLevel} | ${ocean.multiplier}X)`;
+
+        if (isMaxUpgrades) {
+          const nextOcean = OCEAN_WORLDS[Math.min(this.oceanLevel, OCEAN_WORLDS.length - 1)];
+          document.getElementById('prestigeDescText').innerHTML = `<strong>✨ הגעת למקסימום שדרוגים בחכה ובסירה (8/8)!</strong><br>שלם <strong>${requiredCoins.toLocaleString()} 🪙</strong> לעבור ל-${nextOcean.name}, לאפס שדרוגים ולקבל מכפיל ניקוד ומטבעות ${nextOcean.multiplier}X!`;
+          btnPrestige.disabled = this.coins < requiredCoins;
+          btnPrestige.textContent = `🌟 עבור ל-${nextOcean.name} (${requiredCoins.toLocaleString()} 🪙)`;
+        } else {
+          document.getElementById('prestigeDescText').textContent = `הגע לשדרוג 8/8 בחכה ובסירה כדי לפתוח מעבר לעולם הבא! (עלות: ${requiredCoins.toLocaleString()} 🪙)`;
+          btnPrestige.disabled = true;
+          btnPrestige.textContent = `🔒 נדרש שדרוג 8/8 בחכה ובסירה`;
+        }
+      }
+
       start() {
+        const boat = this.getBoat();
         this.score = 0;
-        this.timeLeft = 60;
+        this.timeLeft = 60 + boat.extraTime;
         this.active = true;
         this.fishes = [];
+        this.bombs = [];
+        this.explosions = [];
         this.caughtFish = null;
         this.hook.x = 200;
         this.hook.targetX = 200;
         this.hook.y = 120;
 
         document.getElementById('fishingScore').textContent = '0';
-        document.getElementById('fishingTimerText').textContent = '60s';
+        document.getElementById('fishingTimerText').textContent = `${this.timeLeft}s`;
         document.getElementById('fishingOverlay').style.display = 'none';
 
-        // Spawn initial school of fish
         for (let i = 0; i < 7; i++) {
           this.spawnFish();
         }
+        this.spawnBomb();
 
         if (this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => {
@@ -1311,7 +1696,14 @@
       }
 
       spawnFish() {
-        const species = FISH_SPECIES[Math.floor(Math.random() * FISH_SPECIES.length)];
+        const boat = this.getBoat();
+        let species;
+        if (Math.random() < boat.goldenChance) {
+          species = FISH_SPECIES[FISH_SPECIES.length - 1]; // Golden Fish!
+        } else {
+          species = FISH_SPECIES[Math.floor(Math.random() * FISH_SPECIES.length)];
+        }
+
         const dir = Math.random() > 0.5 ? 1 : -1;
         const x = dir === 1 ? -40 : this.width + 40;
         const y = 180 + Math.random() * 370;
@@ -1325,7 +1717,25 @@
         });
       }
 
+      spawnBomb() {
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        const x = dir === 1 ? -40 : this.width + 40;
+        const y = 190 + Math.random() * 350;
+        this.bombs.push({
+          x: x,
+          y: y,
+          dir: dir,
+          speed: 1.2 + Math.random() * 0.8,
+          pulseTimer: Math.random() * Math.PI * 2
+        });
+      }
+
+      spawnExplosion(x, y) {
+        this.explosions.push({ x: x, y: y, radius: 10, alpha: 1.0 });
+      }
+
       stop() {
+        const ocean = this.getOcean();
         this.active = false;
         if (this.timerInterval) clearInterval(this.timerInterval);
         if (this.animId) cancelAnimationFrame(this.animId);
@@ -1333,7 +1743,6 @@
         if (this.score > this.highScore) {
           this.highScore = this.score;
           localStorage.setItem('fishing_highscore', this.highScore);
-          document.getElementById('fishingHighScore').textContent = this.highScore;
           confetti.trigger();
         }
 
@@ -1343,31 +1752,37 @@
 
         overlay.style.display = 'flex';
         title.textContent = '🏆 סיום זמן הדיג!';
-        desc.innerHTML = `תפסת דגים בשווי <strong>${this.score}</strong> נקודות!<br>השיא שלך: ${this.highScore}`;
+        desc.innerHTML = `תפסת דגים ב-${ocean.name} בשווי <strong>${this.score}</strong> נקודות!<br>סך הכל בקופה שלך: <strong>${this.coins} 🪙</strong> מטבעות!`;
       }
 
       update() {
         if (!this.active) return;
+        const rod = this.getRod();
+        const boat = this.getBoat();
+        const ocean = this.getOcean();
 
-        // Smooth hook movement horizontally
         this.hook.x += (this.hook.targetX - this.hook.x) * 0.15;
-
-        // Hook vertical oscillation depth (rising and dipping into ocean)
         this.hook.depthTimer += 0.035;
-        if (!this.caughtFish) {
-          this.hook.y = 200 + Math.sin(this.hook.depthTimer) * 220; // Goes from y=100 (top) down to y=420 (deep ocean)
-        } else {
-          // Reel up caught fish to boat at y=90!
-          this.hook.y -= 7;
-          if (this.hook.y <= 95) {
-            // Fish reached boat!
-            this.score += this.caughtFish.species.pts;
-            document.getElementById('fishingScore').textContent = this.score;
 
-            this.bannerText = `🎣 תפסת ${this.caughtFish.species.name}! (+${this.caughtFish.species.pts} נק׳)`;
+        if (!this.caughtFish) {
+          this.hook.y = 200 + Math.sin(this.hook.depthTimer) * 220;
+        } else {
+          this.hook.y -= boat.speed;
+          if (this.hook.y <= 95) {
+            const pointsEarned = this.caughtFish.species.pts * rod.multiplier * ocean.multiplier;
+            const coinsEarned = (this.caughtFish.species.coins || 20) * rod.multiplier * ocean.multiplier;
+
+            this.score += pointsEarned;
+            this.coins += coinsEarned;
+            localStorage.setItem('fishing_coins', this.coins);
+
+            document.getElementById('fishingScore').textContent = this.score;
+            this.updateCoinsUI();
+
+            this.bannerText = `🎣 תפסת ${this.caughtFish.species.name}! (+${pointsEarned} נק׳, +${coinsEarned} 🪙)`;
             this.bannerTimer = 60;
 
-            if (this.caughtFish.species.pts >= 250) {
+            if (pointsEarned >= 250) {
               audio.playVictoryFanfare();
               confetti.trigger();
             } else {
@@ -1378,21 +1793,66 @@
           }
         }
 
-        // Keep fish population floating
         if (this.fishes.length < 8 && Math.random() < 0.04) {
           this.spawnFish();
         }
 
-        // Update fish swimming
+        if (this.bombs.length < 2 && Math.random() < 0.015) {
+          this.spawnBomb();
+        }
+
+        // Update & Check Bombs
+        for (let i = this.bombs.length - 1; i >= 0; i--) {
+          const bomb = this.bombs[i];
+          bomb.pulseTimer += 0.1;
+          bomb.x += bomb.dir * bomb.speed;
+
+          const bDist = Math.hypot(this.hook.x - bomb.x, (this.hook.y + 10) - bomb.y);
+          if (bDist < 30) {
+            audio.playCrash();
+            this.timeLeft = Math.max(0, this.timeLeft - 5);
+            document.getElementById('fishingTimerText').textContent = `${this.timeLeft}s`;
+
+            this.bannerText = '💣 בום! נגעת בפצצה ימית! (-5 שניות ⏱️)';
+            this.bannerTimer = 65;
+
+            this.spawnExplosion(bomb.x, bomb.y);
+            this.hook.y = 120;
+            this.caughtFish = null;
+            this.bombs.splice(i, 1);
+            continue;
+          }
+
+          if ((bomb.dir === 1 && bomb.x > this.width + 60) || (bomb.dir === -1 && bomb.x < -60)) {
+            this.bombs.splice(i, 1);
+          }
+        }
+
+        // Update explosions
+        for (let i = this.explosions.length - 1; i >= 0; i--) {
+          const exp = this.explosions[i];
+          exp.radius += 2.5;
+          exp.alpha -= 0.05;
+          if (exp.alpha <= 0) this.explosions.splice(i, 1);
+        }
+
         for (let i = this.fishes.length - 1; i >= 0; i--) {
           const fish = this.fishes[i];
+
+          // Magnet upgrade effect
+          if (rod.magnet && !this.caughtFish) {
+            const mDist = Math.hypot(this.hook.x - fish.x, this.hook.y - fish.y);
+            if (mDist < 120) {
+              fish.x += (this.hook.x - fish.x) * 0.05;
+              fish.y += (this.hook.y - fish.y) * 0.05;
+            }
+          }
+
           fish.x += fish.dir * fish.speed;
 
-          // Check Hook Collision if no fish currently caught
           if (!this.caughtFish) {
             const dist = Math.hypot(this.hook.x - fish.x, (this.hook.y + 15) - fish.y);
-            if (dist < 32) {
-              // HOOKED!
+            if (dist < rod.radius) {
               this.caughtFish = fish;
               this.fishes.splice(i, 1);
               audio.playBasketScore();
@@ -1400,7 +1860,6 @@
             }
           }
 
-          // Out of bounds
           if ((fish.dir === 1 && fish.x > this.width + 60) || (fish.dir === -1 && fish.x < -60)) {
             this.fishes.splice(i, 1);
           }
@@ -1408,48 +1867,59 @@
       }
 
       draw() {
-        // Sky & Sea Background
-        this.ctx.fillStyle = '#38bdf8';
-        this.ctx.fillRect(0, 0, this.width, 90); // Sky / Surface
+        const rod = this.getRod();
+        const boat = this.getBoat();
+        const ocean = this.getOcean();
 
-        // Ocean Gradient
+        this.ctx.fillStyle = ocean.skyColor;
+        this.ctx.fillRect(0, 0, this.width, 90);
+
         const oceanGrad = this.ctx.createLinearGradient(0, 90, 0, this.height);
-        oceanGrad.addColorStop(0, '#0284c7');
-        oceanGrad.addColorStop(0.5, '#0369a1');
-        oceanGrad.addColorStop(1, '#0f172a');
+        oceanGrad.addColorStop(0, ocean.colorTop);
+        oceanGrad.addColorStop(0.5, ocean.colorTop);
+        oceanGrad.addColorStop(1, ocean.colorBot);
         this.ctx.fillStyle = oceanGrad;
         this.ctx.fillRect(0, 90, this.width, this.height - 90);
 
-        // Draw Boat on surface
+        // Draw Upgraded Boat
         this.ctx.save();
         this.ctx.fillStyle = '#b45309';
         this.ctx.beginPath();
-        this.ctx.arc(this.hook.x, 88, 30, 0, Math.PI);
+        this.ctx.arc(this.hook.x, 88, 32, 0, Math.PI);
         this.ctx.fill();
 
-        // Fisherman Emoji
         this.ctx.font = '24px sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('👨‍ג', this.hook.x, 70);
+        this.ctx.fillText(boat.boatEmoji, this.hook.x, 70);
         this.ctx.restore();
 
-        // Draw Fishing Line (Wire)
+        // Draw Line & Hook
         this.ctx.save();
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = rod.multiplier > 1 ? '#fbbf24' : 'rgba(255, 255, 255, 0.85)';
+        this.ctx.lineWidth = rod.multiplier > 1 ? 3 : 2;
         this.ctx.beginPath();
         this.ctx.moveTo(this.hook.x, 75);
         this.ctx.lineTo(this.hook.x, this.hook.y);
         this.ctx.stroke();
 
-        // Draw Fishing Hook (🪝)
         this.ctx.font = '28px sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'top';
-        this.ctx.fillText('🪝', this.hook.x, this.hook.y - 4);
+        this.ctx.fillText(rod.emoji, this.hook.x, this.hook.y - 4);
         this.ctx.restore();
 
-        // Draw Caught Fish attached to Hook
+        // Draw Magnet Glow Field if Rod has magnet
+        if (rod.magnet && !this.caughtFish) {
+          this.ctx.save();
+          this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+          this.ctx.lineWidth = 2;
+          this.ctx.setLineDash([4, 4]);
+          this.ctx.beginPath();
+          this.ctx.arc(this.hook.x, this.hook.y + 10, rod.radius, 0, Math.PI * 2);
+          this.ctx.stroke();
+          this.ctx.restore();
+        }
+
         if (this.caughtFish) {
           this.ctx.save();
           this.ctx.font = '32px sans-serif';
@@ -1459,7 +1929,6 @@
           this.ctx.restore();
         }
 
-        // Draw Swimming Fishes
         this.fishes.forEach(fish => {
           this.ctx.save();
           this.ctx.font = `${fish.species.size}px sans-serif`;
@@ -1476,7 +1945,37 @@
           this.ctx.restore();
         });
 
-        // Banner Toast Feedback
+        // Draw Sea Bombs with glowing red warning aura
+        this.bombs.forEach(bomb => {
+          this.ctx.save();
+          const auraRadius = 22 + Math.sin(bomb.pulseTimer) * 4;
+          this.ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+          this.ctx.beginPath();
+          this.ctx.arc(bomb.x, bomb.y, auraRadius, 0, Math.PI * 2);
+          this.ctx.fill();
+
+          this.ctx.font = '28px sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText('💣', bomb.x, bomb.y);
+          this.ctx.restore();
+        });
+
+        // Draw Explosions
+        this.explosions.forEach(exp => {
+          this.ctx.save();
+          this.ctx.fillStyle = `rgba(249, 115, 22, ${exp.alpha})`;
+          this.ctx.beginPath();
+          this.ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2);
+          this.ctx.fill();
+
+          this.ctx.font = '32px sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText('💥', exp.x, exp.y);
+          this.ctx.restore();
+        });
+
         if (this.bannerTimer > 0) {
           this.bannerTimer--;
           this.ctx.save();
@@ -1501,7 +2000,367 @@
 
     const fishingGame = new FishingGame('fishingCanvas');
 
-    // --- TRASH / FOOD THROWING GAME ENGINE (STATIONARY BIN WITH ANIMATED OPENING/CLOSING LID) ---
+    // --- CLAW TREASURE MINER GAME ENGINE ---
+    class ClawGame {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+
+        this.crane = { x: 200, y: 70, dir: 1, speed: 2.2 };
+        this.claw = {
+          y: 70,
+          targetY: 70,
+          state: 'SWINGING', // 'SWINGING', 'DROPPING', 'WAITING', 'SNAPPING', 'REELING'
+          isOpen: true,
+          grabbedItem: null,
+          snapTimer: 0
+        };
+
+        this.items = [];
+        this.score = 0;
+        this.coins = parseInt(localStorage.getItem('claw_coins') || '0');
+        this.highScore = parseInt(localStorage.getItem('claw_highscore') || '0');
+
+        this.timeLeft = 60;
+        this.timerInterval = null;
+        this.active = false;
+        this.animId = null;
+
+        this.bannerText = '';
+        this.bannerTimer = 0;
+
+        this.updateCoinsUI();
+        this.setupControls();
+      }
+
+      updateCoinsUI() {
+        const el = document.getElementById('clawCoinsText');
+        if (el) el.textContent = `🪙 ${this.coins}`;
+      }
+
+      setupControls() {
+        const dropAction = (e) => {
+          if (e) e.stopPropagation();
+          if (!this.active) return;
+          if (this.claw.state === 'SWINGING') {
+            audio.playClick();
+            this.claw.state = 'DROPPING';
+          }
+        };
+
+        const snapAction = (e) => {
+          if (e) e.stopPropagation();
+          if (!this.active) return;
+          if (this.claw.state === 'DROPPING' || this.claw.state === 'WAITING') {
+            audio.playClick();
+            this.claw.state = 'SNAPPING';
+            this.claw.isOpen = false;
+            this.claw.snapTimer = 15;
+            this.checkGrab();
+          }
+        };
+
+        const btnDrop = document.getElementById('btnClawDrop');
+        const btnSnap = document.getElementById('btnClawSnap');
+        if (btnDrop) {
+          btnDrop.addEventListener('click', dropAction);
+          btnDrop.addEventListener('touchend', dropAction);
+        }
+        if (btnSnap) {
+          btnSnap.addEventListener('click', snapAction);
+          btnSnap.addEventListener('touchend', snapAction);
+        }
+
+        this.canvas.addEventListener('click', (e) => {
+          if (!this.active) return;
+          if (this.claw.state === 'SWINGING') dropAction(e);
+          else if (this.claw.state === 'DROPPING' || this.claw.state === 'WAITING') snapAction(e);
+        });
+
+        window.addEventListener('keydown', (e) => {
+          if (!this.active) return;
+          if (e.code === 'Space' || e.code === 'ArrowDown') {
+            e.preventDefault();
+            if (this.claw.state === 'SWINGING') dropAction(e);
+            else if (this.claw.state === 'DROPPING' || this.claw.state === 'WAITING') snapAction(e);
+          }
+        });
+      }
+
+      start() {
+        this.score = 0;
+        this.timeLeft = 60;
+        this.active = true;
+        this.crane.x = 200;
+        this.crane.dir = 1;
+        this.claw.y = 70;
+        this.claw.state = 'SWINGING';
+        this.claw.isOpen = true;
+        this.claw.grabbedItem = null;
+
+        document.getElementById('clawScore').textContent = '0';
+        document.getElementById('clawTimerText').textContent = `${this.timeLeft}s`;
+        document.getElementById('clawOverlay').style.display = 'none';
+
+        this.spawnInitialItems();
+
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => {
+          if (!this.active) return;
+          this.timeLeft--;
+          document.getElementById('clawTimerText').textContent = `${this.timeLeft}s`;
+          if (this.timeLeft <= 0) {
+            this.stop();
+          }
+        }, 1000);
+
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.loop();
+      }
+
+      spawnInitialItems() {
+        this.items = [];
+        const itemTypes = [
+          { emoji: '🪙', name: 'גוש זהב קטן', pts: 50, coins: 20, weight: 1.0, size: 26 },
+          { emoji: '🪙', name: 'גוש זהב בינוני', pts: 120, coins: 50, weight: 1.5, size: 32 },
+          { emoji: '🪙', name: 'גוש זהב ענק', pts: 250, coins: 100, weight: 2.5, size: 40 },
+          { emoji: '💎', name: 'יהלום כחול נוצץ!', pts: 500, coins: 200, weight: 0.6, size: 30 },
+          { emoji: '💎', name: 'יהלום אדום נדיר!', pts: 700, coins: 300, weight: 0.5, size: 34 },
+          { emoji: '🦪', name: 'פנינה בצדפה', pts: 450, coins: 180, weight: 0.9, size: 30 },
+          { emoji: '📦', name: 'תיבת אוצר אגדית', pts: 800, coins: 350, weight: 2.0, size: 36 },
+          { emoji: '💰', name: 'שק זהב מסתורי', pts: 350, coins: 150, weight: 1.2, size: 32 },
+          { emoji: '👑', name: 'כתר מלכותי זהב', pts: 950, coins: 400, weight: 1.1, size: 35 },
+          { emoji: '🏆', name: 'גביע אליפות', pts: 600, coins: 250, weight: 1.3, size: 32 },
+          { emoji: '🧪', name: 'שיקוי בונוס זמן (+10s)', pts: 200, coins: 100, weight: 0.7, size: 28, isPotion: true },
+          { emoji: '🔮', name: 'קריסטל קסמים', pts: 400, coins: 170, weight: 0.8, size: 30 },
+          { emoji: '🐟', name: 'דג מעמקים', pts: 150, coins: 60, weight: 0.8, size: 28, moving: true },
+          { emoji: '🐙', name: 'תמנון מעמקים', pts: 220, coins: 90, weight: 1.1, size: 32, moving: true },
+          { emoji: '💣', name: 'פצצת מעמקים', pts: 0, coins: 0, weight: 1.0, size: 30, isBomb: true }
+        ];
+
+        for (let i = 0; i < 18; i++) {
+          const type = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+          this.items.push({
+            x: 35 + Math.random() * 330,
+            y: 190 + Math.random() * 360,
+            type: type,
+            dir: Math.random() > 0.5 ? 1 : -1
+          });
+        }
+      }
+
+      checkGrab() {
+        for (let i = this.items.length - 1; i >= 0; i--) {
+          const item = this.items[i];
+          const dist = Math.hypot(this.crane.x - item.x, (this.claw.y + 25) - item.y);
+          if (dist < 38) {
+            this.claw.grabbedItem = item;
+            this.items.splice(i, 1);
+            if (item.type.isBomb) {
+              audio.playCrash();
+            } else {
+              audio.playBasketScore();
+            }
+            break;
+          }
+        }
+      }
+
+      stop() {
+        this.active = false;
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.animId) cancelAnimationFrame(this.animId);
+
+        if (this.score > this.highScore) {
+          this.highScore = this.score;
+          localStorage.setItem('claw_highscore', this.highScore);
+          confetti.trigger();
+        }
+
+        const overlay = document.getElementById('clawOverlay');
+        const title = document.getElementById('clawOverlayTitle');
+        const desc = document.getElementById('clawOverlayDesc');
+
+        overlay.style.display = 'flex';
+        title.textContent = '🏆 סיום משחק הצבת!';
+        desc.innerHTML = `תפסת אוצרות בשווי <strong>${this.score}</strong> נקודות!<br>סך הכל בקופה שלך: <strong>${this.coins} 🪙</strong> מטבעות!`;
+      }
+
+      update() {
+        if (!this.active) return;
+
+        this.items.forEach(item => {
+          if (item.type.moving) {
+            item.x += item.dir * 1.5;
+            if (item.x < 30 || item.x > this.width - 30) item.dir *= -1;
+          }
+        });
+
+        if (this.claw.state === 'SWINGING') {
+          this.crane.x += this.crane.dir * this.crane.speed;
+          if (this.crane.x < 40 || this.crane.x > this.width - 40) {
+            this.crane.dir *= -1;
+          }
+          this.claw.y = 70;
+          this.claw.isOpen = true;
+        } else if (this.claw.state === 'DROPPING') {
+          this.claw.y += 6;
+          if (this.claw.y >= 540) {
+            this.claw.state = 'WAITING';
+          }
+        } else if (this.claw.state === 'WAITING') {
+          // Waiting for user to click "סגור צבת!"
+        } else if (this.claw.state === 'SNAPPING') {
+          if (this.claw.snapTimer > 0) {
+            this.claw.snapTimer--;
+          } else {
+            this.claw.state = 'REELING';
+          }
+        } else if (this.claw.state === 'REELING') {
+          const reelSpeed = this.claw.grabbedItem ? Math.max(2, 6 / this.claw.grabbedItem.type.weight) : 7;
+          this.claw.y -= reelSpeed;
+
+          if (this.claw.y <= 70) {
+            this.claw.y = 70;
+            this.claw.state = 'SWINGING';
+
+            if (this.claw.grabbedItem) {
+              const item = this.claw.grabbedItem;
+              if (item.type.isBomb) {
+                audio.playCrash();
+                this.timeLeft = Math.max(0, this.timeLeft - 5);
+                document.getElementById('clawTimerText').textContent = `${this.timeLeft}s`;
+                this.bannerText = '💣 בום! נגעת בפצצה ימית! (-5 שניות ⏱️)';
+                this.bannerTimer = 60;
+              } else if (item.type.isPotion) {
+                this.timeLeft += 10;
+                document.getElementById('clawTimerText').textContent = `${this.timeLeft}s`;
+                this.score += item.type.pts;
+                this.coins += item.type.coins;
+                localStorage.setItem('claw_coins', this.coins);
+                document.getElementById('clawScore').textContent = this.score;
+                this.updateCoinsUI();
+                audio.playVictoryFanfare();
+                confetti.trigger();
+                this.bannerText = '🧪 שיקוי קסם! קיבלת +10 שניות בונוס לזמן! ⏱️';
+                this.bannerTimer = 65;
+              } else {
+                this.score += item.type.pts;
+                this.coins += item.type.coins;
+                localStorage.setItem('claw_coins', this.coins);
+
+                document.getElementById('clawScore').textContent = this.score;
+                this.updateCoinsUI();
+
+                this.bannerText = `✨ תפסת ${item.type.name}! (+${item.type.pts} נק׳, +${item.type.coins} 🪙)`;
+                this.bannerTimer = 60;
+
+                if (item.type.pts >= 400) {
+                  audio.playVictoryFanfare();
+                  confetti.trigger();
+                } else {
+                  audio.playCoin();
+                }
+              }
+              this.claw.grabbedItem = null;
+            }
+
+            if (this.items.length < 8) {
+              this.spawnInitialItems();
+            }
+          }
+        }
+      }
+
+      draw() {
+        this.ctx.fillStyle = '#0f172a';
+        this.ctx.fillRect(0, 0, this.width, 70);
+
+        const cavernGrad = this.ctx.createLinearGradient(0, 70, 0, this.height);
+        cavernGrad.addColorStop(0, '#1e293b');
+        cavernGrad.addColorStop(0.6, '#0f172a');
+        cavernGrad.addColorStop(1, '#020617');
+        this.ctx.fillStyle = cavernGrad;
+        this.ctx.fillRect(0, 70, this.width, this.height - 70);
+
+        this.ctx.fillStyle = '#334155';
+        this.ctx.fillRect(0, 560, this.width, 40);
+
+        this.items.forEach(item => {
+          this.ctx.save();
+          this.ctx.font = `${item.type.size}px sans-serif`;
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(item.type.emoji, item.x, item.y);
+          this.ctx.restore();
+        });
+
+        this.ctx.save();
+        this.ctx.strokeStyle = '#fbbf24';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.crane.x, 70);
+        this.ctx.lineTo(this.crane.x, this.claw.y);
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = '#ca8a04';
+        this.ctx.fillRect(this.crane.x - 20, 55, 40, 15);
+        this.ctx.restore();
+
+        this.ctx.save();
+        this.ctx.translate(this.crane.x, this.claw.y);
+
+        const clawEmoji = this.claw.isOpen ? '👐' : '🔒';
+        this.ctx.font = '32px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'top';
+        this.ctx.fillText(clawEmoji, 0, 0);
+
+        if (this.claw.grabbedItem) {
+          this.ctx.font = `${this.claw.grabbedItem.type.size}px sans-serif`;
+          this.ctx.fillText(this.claw.grabbedItem.type.emoji, 0, 26);
+        }
+        this.ctx.restore();
+
+        if (this.bannerTimer > 0) {
+          this.bannerTimer--;
+          this.ctx.save();
+          this.ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+          this.ctx.fillRect(0, this.height / 2 - 30, this.width, 60);
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 18px Rubik, sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(this.bannerText, this.width / 2, this.height / 2);
+          this.ctx.restore();
+        }
+      }
+
+      loop() {
+        if (!this.active) return;
+        this.update();
+        this.draw();
+        this.animId = requestAnimationFrame(() => this.loop());
+      }
+    }
+
+    const clawGame = new ClawGame('clawCanvas');
+
+    // --- TRASH / FOOD THROWING GAME ENGINE ---
+    const FOOD_TYPES = [
+      { emoji: '🤢', name: 'מאכל רקוב' },
+      { emoji: '🐟', name: 'דג רקוב' },
+      { emoji: '🦴', name: 'עצם אכולה' },
+      { emoji: '🍌', name: 'קליפת בננה רקובה' },
+      { emoji: '🧀', name: 'גבינה מעופשת' },
+      { emoji: '🥑', name: 'אבוקדו מקולקל' },
+      { emoji: '🍎', name: 'ליבת תפוח' },
+      { emoji: '🍔', name: 'המבורגר ישן' },
+      { emoji: '🍕', name: 'פיצה רקובה' }
+    ];
+
     class TrashGame {
       constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -2647,7 +3506,7 @@
     function showScreen(targetScreen, title = 'המשחקים של לב', subtitle = 'בחר משחק להתחלת החוויה') {
       audio.playClick();
 
-      [hubScreen, xoWelcomeScreen, xoGameScreen, carGameScreen, bowlingSetupScreen, bowlingGameScreen, trashGameScreen, fishingGameScreen].forEach(s => s.classList.add('hidden'));
+      [hubScreen, xoWelcomeScreen, xoGameScreen, carGameScreen, bowlingSetupScreen, bowlingGameScreen, trashGameScreen, fishingGameScreen, clawGameScreen].forEach(s => s.classList.add('hidden'));
       targetScreen.classList.remove('hidden');
 
       mainTitle.textContent = title;
@@ -2659,32 +3518,46 @@
         if (bowlingGame.active) bowlingGame.finishMatch();
         if (trashGame.active) trashGame.stop();
         if (fishingGame.active) fishingGame.stop();
+        if (clawGame.active) clawGame.stop();
       } else {
         homeBtn.classList.remove('hidden');
       }
     }
 
-    cardSelectXO.addEventListener('click', () => {
+    function addCardClickListener(cardEl, openFn) {
+      if (!cardEl) return;
+      cardEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        openFn();
+      });
+    }
+
+    addCardClickListener(cardSelectXO, () => {
       showScreen(xoWelcomeScreen, 'איקס עיגול', 'משחק זוגי עם תורות מתחלפים');
     });
 
-    cardSelectCar.addEventListener('click', () => {
+    addCardClickListener(cardSelectCar, () => {
       showScreen(carGameScreen, 'מרוץ מכוניות 🏎️', 'הזזת המכונית עם האצבע מצד לצד!');
       document.getElementById('carOverlay').style.display = 'flex';
     });
 
-    cardSelectBowling.addEventListener('click', () => {
+    addCardClickListener(cardSelectBowling, () => {
       showScreen(bowlingSetupScreen, 'טורניר באולינג 🎳', 'בחירת 1 עד 6 שחקנים בטורניר!');
     });
 
-    cardSelectTrash.addEventListener('click', () => {
+    addCardClickListener(cardSelectTrash, () => {
       showScreen(trashGameScreen, 'זרוק לפח! 🗑️🤢', 'משוך ושחרר לזריקת האוכל לפח!');
       document.getElementById('trashOverlay').style.display = 'flex';
     });
 
-    cardSelectFishing.addEventListener('click', () => {
-      showScreen(fishingGameScreen, 'דייג דגים 🎣🐟', 'הזזת הקרס עם האצבע ותפיסת דגים!');
+    addCardClickListener(cardSelectFishing, () => {
+      showScreen(fishingGameScreen, 'דייג דגים 🎣🐟', 'הזזת הקרס עם האצבע + חנות שדרוגים!');
       document.getElementById('fishingOverlay').style.display = 'flex';
+    });
+
+    addCardClickListener(cardSelectClaw, () => {
+      showScreen(clawGameScreen, 'צבת אוצרות 🏗️💎', 'הורד צבת ➔ חכה ➔ סגור ותפוס אוצרות!');
+      document.getElementById('clawOverlay').style.display = 'flex';
     });
 
     document.getElementById('btnStartXO').addEventListener('click', () => {
@@ -2713,6 +3586,11 @@
       fishingGame.start();
     });
 
+    document.getElementById('btnStartClawGame').addEventListener('click', () => {
+      audio.playClick();
+      clawGame.start();
+    });
+
     document.getElementById('btnBowlingAction').addEventListener('click', () => bowlingGame.action());
     document.getElementById('btnRollBowlingAction').addEventListener('click', () => bowlingGame.action());
 
@@ -2723,6 +3601,7 @@
     document.getElementById('btnBackToMenuFromBowling').addEventListener('click', () => showScreen(hubScreen));
     document.getElementById('btnBackToMenuFromTrash').addEventListener('click', () => showScreen(hubScreen));
     document.getElementById('btnBackToMenuFromFishing').addEventListener('click', () => showScreen(hubScreen));
+    document.getElementById('btnBackToMenuFromClaw').addEventListener('click', () => showScreen(hubScreen));
     homeBtn.addEventListener('click', () => showScreen(hubScreen));
 
     document.getElementById('btnStartCarGame').addEventListener('click', () => {
