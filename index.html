@@ -908,7 +908,8 @@
           <h2 id="carOverlayTitle" style="font-size: 2rem; color: #10b981;">🏎️ מרוץ מכוניות</h2>
           <p id="carOverlayDesc" style="color: var(--text-muted);">
             <strong>👉 החלק עם האצבע על המסך מצד לצד להזזת המכונית!</strong><br>
-            אסוף 10 מטבעות (🪙) כדי לעבור כל שלב!
+            אסוף 10 מטבעות (🪙) כדי לעבור כל שלב!<br>
+            <strong>💰 תפוס מכוניות עם כסף לבונוס ענק של 500 נקודות!</strong>
           </p>
           <button class="btn btn-primary" id="btnStartCarGame" style="padding: 1rem 2rem; font-size: 1.1rem; background: linear-gradient(135deg, #10b981, #059669);">
             🚀 התחל נהיגה
@@ -3165,6 +3166,8 @@
         this.animId = null;
         this.levelBannerTimer = 0;
         this.levelBannerText = '';
+        this.moneyToastTimer = 0;
+        this.moneyToastText = '';
 
         this.keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false };
         this.setupControls();
@@ -3240,6 +3243,7 @@
         this.active = true;
         this.levelBannerTimer = 90;
         this.levelBannerText = LEVEL_CONFIGS[0].name;
+        this.moneyToastTimer = 0;
 
         document.getElementById('carScore').textContent = '0';
         this.updateHUD();
@@ -3304,12 +3308,14 @@
         const config = LEVEL_CONFIGS[this.currentLevelIdx];
         const isMoving = Math.random() < config.movingChance;
         const moveDir = Math.random() > 0.5 ? 1 : -1;
+        const hasMoney = Math.random() < 0.18; // 18% Rare Money Car spawn!
 
         this.obstacles.push({
           x: lane, y: -90, w: 42, h: 75,
           speed: config.speed * (0.65 + Math.random() * 0.35),
-          color: isMoving ? '#e11d48' : color,
-          isMoving: isMoving, moveDir: moveDir, moveSpeed: 1.8 + Math.random() * 1.2
+          color: hasMoney ? '#fbbf24' : (isMoving ? '#e11d48' : color),
+          isMoving: isMoving, moveDir: moveDir, moveSpeed: 1.8 + Math.random() * 1.2,
+          hasMoney: hasMoney
         });
       }
 
@@ -3351,8 +3357,32 @@
             this.player.y < obs.y + obs.h &&
             this.player.y + this.player.h > obs.y
           ) {
-            this.stop(true);
-            return;
+            if (obs.hasMoney) {
+              // MONEY CAR COLLECTED! 500 POINTS BONUS!
+              this.score += 500;
+              this.coinsInCurrentLevel += 2;
+              audio.playVictoryFanfare();
+              confetti.trigger();
+
+              this.moneyToastText = '💰 תפסת מכונית כסף! (+500 נק׳, +2 🪙)';
+              this.moneyToastTimer = 75;
+
+              document.getElementById('carScore').textContent = this.score;
+              if (this.coinsInCurrentLevel >= 10) {
+                this.coinsInCurrentLevel = 0;
+                if (this.currentLevelIdx < LEVEL_CONFIGS.length - 1) this.currentLevelIdx++;
+                const nextConfig = LEVEL_CONFIGS[this.currentLevelIdx];
+                this.levelBannerText = `⚡ LEVEL UP! ${nextConfig.name}`;
+                this.levelBannerTimer = 120;
+                audio.playLevelUp();
+              }
+              this.updateHUD();
+              this.obstacles.splice(i, 1);
+              continue;
+            } else {
+              this.stop(true);
+              return;
+            }
           }
 
           if (obs.y > this.height + 100) {
@@ -3375,26 +3405,71 @@
         }
       }
 
-      drawCar(x, y, w, h, color, isPlayer = false, isMoving = false) {
+      drawCar(x, y, w, h, color, isPlayer = false, isMoving = false, hasMoney = false) {
         this.ctx.save();
-        this.ctx.fillStyle = color;
-        if (isPlayer) { this.ctx.shadowColor = 'rgba(16, 185, 129, 0.7)'; this.ctx.shadowBlur = 14; }
-        else if (isMoving) { this.ctx.shadowColor = 'rgba(225, 29, 72, 0.8)'; this.ctx.shadowBlur = 16; }
 
-        this.ctx.beginPath(); this.ctx.roundRect(x, y, w, h, 10); this.ctx.fill();
-        this.ctx.shadowBlur = 0; this.ctx.fillStyle = '#0f172a';
-        this.ctx.beginPath(); this.ctx.roundRect(x + 5, y + 18, w - 10, h - 35, 6); this.ctx.fill();
+        if (hasMoney && !isPlayer) {
+          // --- MONEY CAR EXTRA PROMINENT GOLDEN DESIGN ---
+          this.ctx.fillStyle = '#f59e0b';
+          this.ctx.shadowColor = 'rgba(251, 191, 36, 1)';
+          this.ctx.shadowBlur = 22;
+          this.ctx.beginPath(); this.ctx.roundRect(x, y, w, h, 10); this.ctx.fill();
 
-        this.ctx.fillStyle = isPlayer ? '#38bdf8' : (isMoving ? '#fbbf24' : '#f43f5e');
-        const lightY = isPlayer ? y + 4 : y + h - 8;
-        this.ctx.fillRect(x + 5, lightY, 8, 4); this.ctx.fillRect(x + w - 13, lightY, 8, 4);
+          // Gold border outline
+          this.ctx.strokeStyle = '#fef08a';
+          this.ctx.lineWidth = 3;
+          this.ctx.stroke();
 
-        if (isMoving && !isPlayer) {
-          this.ctx.fillStyle = '#ffffff';
-          this.ctx.font = 'bold 12px sans-serif';
+          // Dark windshield
+          this.ctx.shadowBlur = 0;
+          this.ctx.fillStyle = '#0f172a';
+          this.ctx.beginPath(); this.ctx.roundRect(x + 5, y + 18, w - 10, h - 35, 6); this.ctx.fill();
+
+          // Bright headlights
+          this.ctx.fillStyle = '#fef08a';
+          this.ctx.fillRect(x + 5, y + h - 8, 9, 5);
+          this.ctx.fillRect(x + w - 14, y + h - 8, 9, 5);
+
+          // Giant Money Bag Emoji 💰 sitting right on the roof!
+          this.ctx.font = '34px sans-serif';
           this.ctx.textAlign = 'center';
-          this.ctx.fillText('↔', x + w / 2, y + h / 2 + 4);
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText('💰', x + w / 2, y + h / 2 - 2);
+
+          // Glowing Floating Badge ABOVE the car roof!
+          this.ctx.fillStyle = '#fbbf24';
+          this.ctx.shadowColor = 'rgba(251, 191, 36, 0.9)';
+          this.ctx.shadowBlur = 10;
+          this.ctx.beginPath();
+          this.ctx.roundRect(x - 6, y - 18, w + 12, 18, 9);
+          this.ctx.fill();
+
+          this.ctx.fillStyle = '#0f172a';
+          this.ctx.font = 'bold 11px Rubik, sans-serif';
+          this.ctx.fillText('💰 500+', x + w / 2, y - 9);
+
+        } else {
+          // Standard Car Drawing
+          this.ctx.fillStyle = color;
+          if (isPlayer) { this.ctx.shadowColor = 'rgba(16, 185, 129, 0.7)'; this.ctx.shadowBlur = 14; }
+          else if (isMoving) { this.ctx.shadowColor = 'rgba(225, 29, 72, 0.8)'; this.ctx.shadowBlur = 16; }
+
+          this.ctx.beginPath(); this.ctx.roundRect(x, y, w, h, 10); this.ctx.fill();
+          this.ctx.shadowBlur = 0; this.ctx.fillStyle = '#0f172a';
+          this.ctx.beginPath(); this.ctx.roundRect(x + 5, y + 18, w - 10, h - 35, 6); this.ctx.fill();
+
+          this.ctx.fillStyle = isPlayer ? '#38bdf8' : (isMoving ? '#fbbf24' : '#f43f5e');
+          const lightY = isPlayer ? y + 4 : y + h - 8;
+          this.ctx.fillRect(x + 5, lightY, 8, 4); this.ctx.fillRect(x + w - 13, lightY, 8, 4);
+
+          if (isMoving && !isPlayer) {
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 12px sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('↔', x + w / 2, y + h / 2 + 4);
+          }
         }
+
         this.ctx.restore();
       }
 
@@ -3415,8 +3490,8 @@
         });
         this.ctx.setLineDash([]);
 
-        this.drawCar(this.player.x, this.player.y, this.player.w, this.player.h, '#10b981', true, false);
-        this.obstacles.forEach(obs => this.drawCar(obs.x, obs.y, obs.w, obs.h, obs.color, false, obs.isMoving));
+        this.drawCar(this.player.x, this.player.y, this.player.w, this.player.h, '#10b981', true, false, false);
+        this.obstacles.forEach(obs => this.drawCar(obs.x, obs.y, obs.w, obs.h, obs.color, false, obs.isMoving, obs.hasMoney));
         this.coins.forEach(c => {
           this.ctx.save();
           this.ctx.fillStyle = '#fbbf24'; this.ctx.shadowColor = '#fbbf24'; this.ctx.shadowBlur = 10;
@@ -3426,6 +3501,18 @@
           this.ctx.fillText('★', c.x, c.y);
           this.ctx.restore();
         });
+
+        if (this.moneyToastTimer > 0) {
+          this.moneyToastTimer--;
+          this.ctx.save();
+          this.ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
+          this.ctx.fillRect(0, this.height / 2 - 28, this.width, 56);
+          this.ctx.fillStyle = '#0f172a';
+          this.ctx.font = 'bold 17px Rubik, sans-serif';
+          this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(this.moneyToastText, this.width / 2, this.height / 2);
+          this.ctx.restore();
+        }
 
         if (this.levelBannerTimer > 0) {
           this.levelBannerTimer--;
